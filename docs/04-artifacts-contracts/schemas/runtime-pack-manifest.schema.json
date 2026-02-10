@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schemas/runtime-pack-manifest.schema.json",
+  "title": "Runtime Pack Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "pack_id",
+    "source_exchange_id",
+    "build_id",
+    "pack_version",
+    "created_at",
+    "compiler",
+    "compatibility",
+    "projections",
+    "files"
+  ],
+  "properties": {
+    "type": { "const": "runtime_pack_manifest" },
+
+    "pack_id": { "type": "string", "minLength": 1 },
+    "source_exchange_id": { "type": "string", "minLength": 1 },
+    "build_id": { "type": "string", "minLength": 1 },
+
+    "pack_version": {
+      "description": "Monotonic version identifier used for downgrade prevention and deterministic rollback policies.",
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["semver"],
+          "properties": {
+            "semver": { "type": "string", "minLength": 1 },
+            "build": { "type": "string", "default": "" },
+            "channel": { "type": "string", "default": "" }
+          }
+        }
+      ]
+    },
+
+    "created_at": { "type": "string", "format": "date-time" },
+
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "default": {},
+      "properties": {
+        "mandate_id": { "type": "string", "default": "" },
+        "mandate_version": { "type": "string", "default": "" },
+        "blueprint_version": { "type": "string", "default": "" },
+        "policy_versions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        },
+        "tenant_id": { "type": "string", "default": "" },
+        "environment": { "type": "string", "default": "" }
+      }
+    },
+
+    "compiler": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "config_hash"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "config_hash": { "type": "string", "minLength": 1 },
+        "schema_versions": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "default": {}
+        }
+      }
+    },
+
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["query_contract_version"],
+      "properties": {
+        "query_contract_version": {
+          "description": "Consumer runtime contract version required to query/execute this pack.",
+          "type": "string",
+          "minLength": 1
+        },
+        "min_runtime_version": { "type": "string", "default": "" },
+        "max_runtime_version": { "type": "string", "default": "" },
+        "required_capabilities": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        },
+        "locales": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 2 },
+          "default": []
+        }
+      }
+    },
+
+    "projections": {
+      "description": "Named projections included in the pack (e.g., indexes, dictionaries, UI bundles, embeddings).",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "kind"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "kind": {
+            "type": "string",
+            "enum": ["index", "table", "dictionary", "template", "locale_bundle", "embedding_index", "other"]
+          },
+          "version": { "type": "string", "default": "" },
+          "notes": { "type": "string", "default": "" }
+        }
+      }
+    },
+
+    "files": {
+      "description": "Files shipped in the pack. Paths are relative to the pack root.",
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/file_entry" }
+    },
+
+    "hashes": {
+      "description": "Optional global hash root(s) for efficient verification profiles.",
+      "type": "object",
+      "additionalProperties": false,
+      "default": {},
+      "properties": {
+        "manifest_sha256": { "type": "string", "default": "" },
+        "bundle_root_sha256": { "type": "string", "default": "" },
+        "merkle_root": { "type": "string", "default": "" }
+      }
+    },
+
+    "signatures": {
+      "description": "Optional signatures for offline verification.",
+      "type": "array",
+      "default": [],
+      "items": { "$ref": "#/$defs/signature" }
+    },
+
+    "confidentiality": {
+      "type": "object",
+      "additionalProperties": false,
+      "default": {},
+      "properties": {
+        "class": {
+          "type": "string",
+          "enum": ["public", "internal", "restricted", "private"],
+          "default": "public"
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        }
+      }
+    },
+
+    "notes": {
+      "type": "string",
+      "default": ""
+    }
+  },
+
+  "$defs": {
+    "file_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "role", "sha256"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/).+"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["manifest", "index", "table", "dictionary", "template", "locale_bundle", "asset", "other"]
+        },
+        "sha256": { "type": "string", "minLength": 1 },
+        "size_bytes": { "type": "integer", "minimum": 0, "default": 0 },
+        "mime_type": { "type": "string", "default": "" },
+        "optional": { "type": "boolean", "default": false }
+      }
+    },
+
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alg", "kid", "value"],
+      "properties": {
+        "alg": {
+          "type": "string",
+          "enum": ["ed25519", "rsa-pss-sha256", "ecdsa-p256-sha256", "hmac-sha256"]
+        },
+        "kid": { "type": "string", "minLength": 1 },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Signature value (e.g., base64)."
+        },
+        "signed_fields": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,296 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "docs/04-artifacts-contracts/schemas/resolved-claim-ir.schema.json",
+  "title": "Resolved Claim-IR Batch (v3.0)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "batch_id", "created_at", "source_claim_ir_ref", "resolver", "resolved_claims"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "3.0",
+      "description": "Schema version for Resolved Claim-IR batch."
+    },
+    "batch_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable identifier for this resolved batch (content-addressed recommended)."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC timestamp of resolution output."
+    },
+    "build_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional correlation ID for end-to-end traceability."
+    },
+    "tenant_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional multi-tenant partition identifier."
+    },
+    "source_claim_ir_ref": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Reference (hash/URI) to the source Claim-IR batch this output resolves."
+    },
+    "input_snapshots": {
+      "type": "array",
+      "description": "Optional list of input snapshot refs used to resolve claims.",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "resolver": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "profile": {
+          "type": "string",
+          "description": "Optional resolution profile identifier (e.g., policy set, language mode)."
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "description": "Optional policy controls applied during resolution (must be declared if used).",
+      "additionalProperties": true
+    },
+    "resolved_claims": {
+      "type": "array",
+      "minItems": 0,
+      "items": { "$ref": "#/$defs/ResolvedClaim" }
+    },
+    "stats": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "accepted": { "type": "integer", "minimum": 0 },
+        "rejected": { "type": "integer", "minimum": 0 },
+        "ambiguous": { "type": "integer", "minimum": 0 },
+        "deferred": { "type": "integer", "minimum": 0 }
+      }
+    }
+  },
+  "$defs": {
+    "ResolvedClaim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claim_id", "disposition"],
+      "properties": {
+        "claim_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable ID of the input claim being resolved."
+        },
+        "disposition": {
+          "type": "string",
+          "enum": ["accepted", "rejected", "ambiguous", "deferred"],
+          "description": "Resolution decision state. Ambiguity must be explicit; no silent coercion."
+        },
+        "decision_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional stable ID for the decision record (content-addressed recommended)."
+        },
+        "statement": {
+          "$ref": "#/$defs/Statement",
+          "description": "The resolved statement, present only when disposition=accepted."
+        },
+        "alternatives": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Candidate statements when disposition=ambiguous.",
+          "items": { "$ref": "#/$defs/StatementCandidate" }
+        },
+        "rejection": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Rejection reason when disposition=rejected.",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "type": "string", "minLength": 1 },
+            "message": { "type": "string", "minLength": 1 },
+            "details": { "type": "object", "additionalProperties": true }
+          }
+        },
+        "deferral": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Deferral reason when disposition=deferred.",
+          "required": ["code", "message"],
+          "properties": {
+            "code": { "type": "string", "minLength": 1 },
+            "message": { "type": "string", "minLength": 1 },
+            "needs": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "description": "What must be provided to resolve later (e.g., more evidence, disambiguation input)."
+            },
+            "details": { "type": "object", "additionalProperties": true }
+          }
+        },
+        "rationale": {
+          "type": "string",
+          "description": "Optional human-readable explanation of how the resolution was made."
+        },
+        "evidence_refs": {
+          "type": "array",
+          "description": "Optional list of evidence IDs/refs supporting the resolved decision.",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Optional confidence value, only if explicitly provided by upstream processes/policy."
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "disposition": { "const": "accepted" } } },
+          "then": {
+            "required": ["statement"],
+            "not": { "required": ["alternatives", "rejection", "deferral"] }
+          }
+        },
+        {
+          "if": { "properties": { "disposition": { "const": "ambiguous" } } },
+          "then": {
+            "required": ["alternatives"],
+            "not": { "required": ["statement", "rejection", "deferral"] }
+          }
+        },
+        {
+          "if": { "properties": { "disposition": { "const": "rejected" } } },
+          "then": {
+            "required": ["rejection"],
+            "not": { "required": ["statement", "alternatives", "deferral"] }
+          }
+        },
+        {
+          "if": { "properties": { "disposition": { "const": "deferred" } } },
+          "then": {
+            "required": ["deferral"],
+            "not": { "required": ["statement", "alternatives", "rejection"] }
+          }
+        }
+      ]
+    },
+    "Statement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statement_id", "subject", "predicate", "object"],
+      "properties": {
+        "statement_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable statement identifier (content-addressed recommended)."
+        },
+        "subject": {
+          "$ref": "#/$defs/EntityRef",
+          "description": "Subject entity reference."
+        },
+        "predicate": {
+          "$ref": "#/$defs/EntityRef",
+          "description": "Predicate/property reference."
+        },
+        "object": {
+          "$ref": "#/$defs/ObjectRef",
+          "description": "Object value reference."
+        },
+        "qualifiers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Qualifier" }
+        },
+        "scope": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Optional scoping (e.g., time, locale, context) if required by domain policy."
+        }
+      }
+    },
+    "StatementCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_id", "statement"],
+      "properties": {
+        "candidate_id": { "type": "string", "minLength": 1 },
+        "statement": { "$ref": "#/$defs/Statement" },
+        "support": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Optional evidence refs supporting this candidate."
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "notes": { "type": "string" }
+      }
+    },
+    "EntityRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Entity identifier (e.g., QID/PID or local ID)."
+        },
+        "label": {
+          "type": "string",
+          "description": "Optional human label; must not be treated as identity."
+        }
+      }
+    },
+    "ObjectRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "value"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["entity", "string", "number", "boolean", "time", "quantity", "uri", "json"],
+          "description": "Value type discriminator."
+        },
+        "value": {
+          "description": "Typed value. If type=entity, value should be an entity id string."
+        },
+        "unit": {
+          "type": "string",
+          "description": "Unit id/label when type=quantity."
+        },
+        "precision": {
+          "type": "number",
+          "description": "Optional numeric precision when relevant."
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "entity" } } },
+          "then": { "properties": { "value": { "type": "string", "minLength": 1 } } }
+        }
+      ]
+    },
+    "Qualifier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["predicate", "object"],
+      "properties": {
+        "predicate": { "$ref": "#/$defs/EntityRef" },
+        "object": { "$ref": "#/$defs/ObjectRef" }
+      }
+    }
+  }
+}

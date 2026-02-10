@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/orgo-case.schema.json",
+  "title": "Orgo Case",
+  "description": "Canonical JSON contract for Orgo Cases at API/message boundaries. Maps to the `cases` table and CASE_STATUS/TASK_SEVERITY enums.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "case_id",
+    "organization_id",
+    "source_type",
+    "label",
+    "title",
+    "description",
+    "status",
+    "severity"
+  ],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Stable external identifier (maps from cases.id)."
+    },
+    "organization_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Tenant boundary key."
+    },
+    "source_type": {
+      "type": "string",
+      "enum": ["email", "api", "manual", "sync"],
+      "description": "Origin channel (maps to task_source_enum / cases.source_type)."
+    },
+    "source_reference": {
+      "type": ["string", "null"],
+      "description": "Channel-specific reference (e.g., email message-id, external URI)."
+    },
+    "label": {
+      "type": "string",
+      "description": "Canonical information label \"<BASE>.<CATEGORY><SUBCATEGORY>.<HORIZONTAL_ROLE>\"."
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 512
+    },
+    "description": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["open", "in_progress", "resolved", "archived"],
+      "description": "Case lifecycle (CASE_STATUS). Transition rules are enforced by services (not by this schema)."
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "minor",
+        "moderate",
+        "major",
+        "critical",
+        "MINOR",
+        "MODERATE",
+        "MAJOR",
+        "CRITICAL"
+      ],
+      "description": "JSON commonly uses lower-case severity tokens; implementations may accept upper-case and normalize to the canonical DB enum."
+    },
+    "reactivity_time": {
+      "type": ["string", "null"],
+      "description": "ISO-8601 duration (e.g., \"PT2H\"); DB uses interval."
+    },
+    "origin_vertical_level": {
+      "type": ["integer", "null"],
+      "description": "Base part of original label (e.g., 100, 1001)."
+    },
+    "origin_role": {
+      "type": ["string", "null"],
+      "description": "Horizontal role of origin (e.g., \"Ops.Maintenance\")."
+    },
+    "tags": {
+      "type": ["array", "null"],
+      "items": { "type": "string" },
+      "description": "High-level tags (e.g., [\"safety\",\"wet_floor\"])."
+    },
+    "location": {
+      "type": ["object", "null"],
+      "additionalProperties": true,
+      "description": "Structured location (site, building, GPS, org context, etc.)."
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Case-level metadata (e.g., profile_id, pattern_sensitivity, review_frequency, notification_scope, visibility, escalation_path[], etc.)."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "readOnly": true
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "readOnly": true
+    }
+  }
+}

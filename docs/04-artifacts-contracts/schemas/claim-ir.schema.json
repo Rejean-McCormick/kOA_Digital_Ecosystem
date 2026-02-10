@@ -1,0 +1,309 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schemas/claim-ir.schema.json",
+  "title": "Claim-IR",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "claim_ir_id",
+    "build_context",
+    "inputs",
+    "engine",
+    "claims",
+    "created_at"
+  ],
+  "properties": {
+    "type": {
+      "const": "claim_ir"
+    },
+    "claim_ir_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "build_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mandate_id", "mandate_version", "blueprint_version"],
+      "properties": {
+        "mandate_id": { "type": "string", "minLength": 1 },
+        "mandate_version": { "type": "string", "minLength": 1 },
+        "blueprint_version": { "type": "string", "minLength": 1 },
+        "policy_versions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "default": []
+        }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input_snapshot_ids"],
+      "properties": {
+        "input_snapshot_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "source_descriptor": {
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "engine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "config_hash"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "config_hash": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Hash of extractor configuration (and prompt/template if applicable)."
+        },
+        "deterministic_mode": { "type": "boolean", "default": true },
+        "seed": {
+          "type": ["integer", "string", "null"],
+          "default": null
+        }
+      }
+    },
+    "claims": {
+      "type": "array",
+      "minItems": 0,
+      "items": { "$ref": "#/$defs/claim" }
+    },
+    "conflict_hints": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/conflict_hint" },
+      "default": []
+    },
+    "statistics": {
+      "type": "object",
+      "additionalProperties": false,
+      "default": {},
+      "properties": {
+        "claims_total": { "type": "integer", "minimum": 0 },
+        "with_evidence": { "type": "integer", "minimum": 0 },
+        "with_uncertainty": { "type": "integer", "minimum": 0 },
+        "rejected_by_policy": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": {
+          "type": "string",
+          "enum": ["entity", "property", "literal", "document", "claim", "unknown"]
+        },
+        "label": { "type": "string", "default": "" }
+      }
+    },
+    "value": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["entity", "literal"]
+        },
+        "entity": { "$ref": "#/$defs/ref" },
+        "literal": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["datatype", "value"],
+          "properties": {
+            "datatype": { "type": "string", "minLength": 1 },
+            "value": {},
+            "language": { "type": "string", "default": "" }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "entity" } }, "required": ["kind"] },
+          "then": { "required": ["entity"] }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "literal" } }, "required": ["kind"] },
+          "then": { "required": ["literal"] }
+        }
+      ]
+    },
+    "provenance_pointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshot_id", "pointer"],
+      "properties": {
+        "snapshot_id": { "type": "string", "minLength": 1 },
+        "pointer": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Opaque pointer to source location (e.g., doc://...#L10-L20, url+fragment, etc.)."
+        }
+      }
+    },
+    "evidence_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_id", "provenance"],
+      "properties": {
+        "evidence_id": { "type": "string", "minLength": 1 },
+        "provenance": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/provenance_pointer" }
+        },
+        "quote": {
+          "type": "string",
+          "default": "",
+          "description": "Optional short excerpt; omit if policy forbids."
+        }
+      }
+    },
+    "uncertainty": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "AMBIGUOUS_SOURCE",
+              "CONFLICTING_SOURCES",
+              "WEAK_EVIDENCE",
+              "MISSING_CONTEXT",
+              "TEMPORAL_UNCERTAINTY",
+              "IDENTITY_UNCERTAINTY"
+            ]
+          },
+          "default": []
+        },
+        "notes": { "type": "string", "default": "" }
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "default": {},
+      "properties": {
+        "time": {
+          "type": "object",
+          "additionalProperties": false,
+          "default": {},
+          "properties": {
+            "start": { "type": ["string", "null"], "format": "date-time", "default": null },
+            "end": { "type": ["string", "null"], "format": "date-time", "default": null }
+          }
+        },
+        "jurisdiction": { "type": ["string", "null"], "default": null },
+        "scope": { "type": ["string", "null"], "default": null }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claim_id", "subject", "predicate", "object", "status", "lineage", "provenance"],
+      "properties": {
+        "claim_id": { "type": "string", "minLength": 1 },
+        "subject": { "$ref": "#/$defs/ref" },
+        "predicate": { "$ref": "#/$defs/ref" },
+        "object": { "$ref": "#/$defs/value" },
+        "status": {
+          "type": "string",
+          "enum": ["PROPOSED", "REJECTED"],
+          "default": "PROPOSED"
+        },
+        "lineage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["input_snapshot_ids"],
+          "properties": {
+            "input_snapshot_ids": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "extractor_event_id": { "type": "string", "default": "" }
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sources"],
+          "properties": {
+            "sources": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/$defs/provenance_pointer" }
+            }
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidence_ref" },
+          "default": []
+        },
+        "uncertainty": {
+          "$ref": "#/$defs/uncertainty"
+        },
+        "constraints": {
+          "$ref": "#/$defs/constraints"
+        },
+        "notes": {
+          "type": "object",
+          "additionalProperties": false,
+          "default": {},
+          "properties": {
+            "warnings": { "type": "array", "items": { "type": "string" }, "default": [] },
+            "redactions": { "type": "array", "items": { "type": "string" }, "default": [] }
+          }
+        }
+      }
+    },
+    "conflict_hint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slot", "members"],
+      "properties": {
+        "slot": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["subject", "predicate"],
+          "properties": {
+            "subject": { "$ref": "#/$defs/ref" },
+            "predicate": { "$ref": "#/$defs/ref" }
+          }
+        },
+        "members": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["claim_id"],
+            "properties": {
+              "claim_id": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "note": { "type": "string", "default": "" }
+      }
+    }
+  }
+}
