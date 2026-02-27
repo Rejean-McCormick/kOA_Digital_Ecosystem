@@ -1,0 +1,531 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schemas/render-bundle.schema.json",
+  "title": "Render Bundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "bundle_version",
+    "bundle_id",
+    "created_at",
+    "renderer",
+    "inputs",
+    "outputs",
+    "trace_map"
+  ],
+  "properties": {
+    "bundle_version": {
+      "type": "string",
+      "description": "Render Bundle schema version.",
+      "pattern": "^[0-9]+\\.[0-9]+$",
+      "default": "1.0"
+    },
+
+    "schema_version": {
+      "type": "string",
+      "description": "Legacy alias for bundle_version (deprecated).",
+      "pattern": "^[0-9]+\\.[0-9]+$",
+      "deprecated": true
+    },
+
+    "bundle_id": {
+      "type": "string",
+      "description": "Stable identifier for this Render Bundle. Recommended: content-addressed ID derived from canonical bundle payload (implementation-defined).",
+      "minLength": 16
+    },
+
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Creation timestamp (UTC ISO-8601)."
+    },
+
+    "renderer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component", "version"],
+      "properties": {
+        "component": {
+          "type": "string",
+          "description": "Renderer identity (e.g., Architect-Render)."
+        },
+        "version": {
+          "type": "string",
+          "description": "Renderer version."
+        },
+        "instance_id": {
+          "type": "string",
+          "description": "Optional runtime instance identifier (observability)."
+        },
+        "build": {
+          "type": "string",
+          "description": "Optional build identifier for the renderer binary/package."
+        }
+      }
+    },
+
+    "determinism": {
+      "type": "object",
+      "description": "Declared determinism surface for reproducibility.",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["strict", "best_effort"],
+          "default": "strict",
+          "description": "Determinism mode declared for this render."
+        },
+        "canonicalization_profile": {
+          "type": "string",
+          "description": "Canonicalization profile used for hashing/verification (if any)."
+        },
+        "stable_ordering": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether output ordering is guaranteed stable under this mode."
+        },
+        "config_hash": {
+          "type": "string",
+          "description": "Hash of renderer configuration affecting output.",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "seed_policy": {
+          "type": "string",
+          "description": "Policy for stochastic components.",
+          "enum": ["none", "fixed", "forbidden"],
+          "default": "none"
+        },
+        "seed_value": {
+          "type": "integer",
+          "description": "If seed_policy=fixed, the seed value used."
+        }
+      }
+    },
+
+    "template": {
+      "type": "object",
+      "description": "Optional template identity (required by policy if templates are used).",
+      "additionalProperties": false,
+      "required": ["template_id", "template_version"],
+      "properties": {
+        "template_id": { "type": "string" },
+        "template_version": { "type": "string" },
+        "locale": { "type": "string" }
+      }
+    },
+
+    "parameters": {
+      "type": "object",
+      "description": "Declared rendering parameters (MUST be included if they affect output).",
+      "additionalProperties": true
+    },
+
+    "inputs": {
+      "type": "object",
+      "description": "Canonical input references used for rendering.",
+      "additionalProperties": false,
+      "required": ["blueprint_hash", "policy_id", "pipeline_refs"],
+      "properties": {
+        "exchange_ref": {
+          "$ref": "#/$defs/ContentRef",
+          "description": "Reference to Kristal Exchange payload or registry ref."
+        },
+        "runtime_pack_ref": {
+          "$ref": "#/$defs/ContentRef",
+          "description": "Reference to Runtime Pack payload or registry ref."
+        },
+
+        "blueprint_hash": {
+          "type": "string",
+          "description": "Hash of the Blueprint bundle used for this render.",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+
+        "policy_id": {
+          "type": "string",
+          "description": "Policy identifier used for rendering decisions (omit/uncertain/refuse behavior, determinism mode, etc.)."
+        },
+
+        "pipeline_refs": {
+          "type": "object",
+          "description": "Validated lineage references used for traceability enforcement.",
+          "additionalProperties": false,
+          "required": ["resolved_claim_ir", "validation_report"],
+          "properties": {
+            "resolved_claim_ir": { "$ref": "#/$defs/ContentRef" },
+            "validation_report": { "$ref": "#/$defs/ContentRef" },
+            "claim_ir": { "$ref": "#/$defs/ContentRef" }
+          }
+        },
+
+        "mandate": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "mandate_id": { "type": "string" },
+            "mandate_version": { "type": "string" }
+          }
+        },
+
+        "approved_aux_inputs": {
+          "type": "array",
+          "description": "Optional auxiliary inputs explicitly allowed by policy (must not expand factual surface beyond validated lineage).",
+          "items": { "$ref": "#/$defs/ContentRef" }
+        }
+      },
+      "anyOf": [
+        { "required": ["exchange_ref"] },
+        { "required": ["runtime_pack_ref"] }
+      ]
+    },
+
+    "correlation": {
+      "type": "object",
+      "description": "IDs linking this render to workflow/build/task/case.",
+      "additionalProperties": false,
+      "properties": {
+        "request_id": { "type": "string" },
+        "case_id": { "type": "string", "format": "uuid" },
+        "task_id": { "type": "string", "format": "uuid" },
+        "workflow_id": { "type": "string" },
+        "build_id": { "type": "string" }
+      }
+    },
+
+    "outputs": {
+      "type": "array",
+      "description": "One or more rendered output artifacts included in this bundle.",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/RenderedArtifact" }
+    },
+
+    "trace_map": {
+      "type": "object",
+      "description": "Trace coverage for rendered outputs. Every factual assertion must be trace-covered, omitted, marked uncertain (when upstream uncertainty exists), or refused.",
+      "additionalProperties": false,
+      "required": ["version", "coverage", "entries"],
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+$",
+          "default": "1.0"
+        },
+
+        "coverage_policy": {
+          "type": "string",
+          "enum": ["all_factual_must_trace", "best_effort"],
+          "default": "all_factual_must_trace",
+          "description": "Policy controlling whether untraced factual assertions must trigger omit/uncertain/refuse behavior."
+        },
+
+        "coverage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "assertions_total",
+            "assertions_traced",
+            "assertions_omitted",
+            "assertions_uncertain",
+            "assertions_refused"
+          ],
+          "properties": {
+            "assertions_total": { "type": "integer", "minimum": 0 },
+            "assertions_traced": { "type": "integer", "minimum": 0 },
+            "assertions_omitted": { "type": "integer", "minimum": 0 },
+            "assertions_uncertain": { "type": "integer", "minimum": 0 },
+            "assertions_refused": { "type": "integer", "minimum": 0 }
+          }
+        },
+
+        "entries": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/TraceEntry" }
+        }
+      }
+    },
+
+    "events": {
+      "type": "object",
+      "description": "Deterministic render events produced during enforcement (omissions/refusals/uncertainties).",
+      "additionalProperties": false,
+      "properties": {
+        "omissions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Omission" }
+        },
+        "refusals": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Refusal" }
+        },
+        "uncertainties": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Uncertainty" }
+        }
+      }
+    },
+
+    "integrity": {
+      "type": "object",
+      "description": "Optional integrity envelope for the Render Bundle itself.",
+      "additionalProperties": false,
+      "properties": {
+        "content_hash": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "hash_alg": { "type": "string", "default": "sha256", "enum": ["sha256"] },
+        "signatures": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Signature" }
+        }
+      }
+    },
+
+    "extensions": {
+      "type": "object",
+      "description": "Forward-compatible extension space.",
+      "additionalProperties": true
+    }
+  },
+
+  "$defs": {
+    "ContentRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref_type", "ref", "hash", "hash_algorithm"],
+      "properties": {
+        "ref_type": {
+          "type": "string",
+          "enum": ["content_addressed", "uri", "registry"]
+        },
+        "ref": { "type": "string", "minLength": 1 },
+        "hash": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" },
+        "hash_algorithm": { "type": "string", "enum": ["sha256"] },
+        "byte_size": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "RenderedArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "media_type"],
+      "properties": {
+        "artifact_id": {
+          "type": "string",
+          "description": "Stable identifier within the bundle."
+        },
+        "media_type": {
+          "type": "string",
+          "description": "IANA media type (e.g., text/markdown, text/plain, text/html, application/pdf)."
+        },
+        "language": { "type": "string" },
+        "title": { "type": "string" },
+        "content": {
+          "type": "string",
+          "description": "Inline content. Use either content or content_ref."
+        },
+        "content_ref": {
+          "type": "string",
+          "description": "External content reference (path/URI). Use either content_ref or content."
+        },
+        "content_hash": {
+          "type": "string",
+          "description": "Hash of the artifact content bytes (when applicable).",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "hash_alg": { "type": "string", "default": "sha256", "enum": ["sha256"] }
+      },
+      "oneOf": [{ "required": ["content"] }, { "required": ["content_ref"] }]
+    },
+
+    "TraceEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assertion_id", "artifact_id", "assertion_text", "kind", "state"],
+      "properties": {
+        "assertion_id": {
+          "type": "string",
+          "description": "Stable identifier for this assertion (renderer-defined)."
+        },
+        "artifact_id": {
+          "type": "string",
+          "description": "Which output artifact this assertion belongs to (matches outputs[].artifact_id)."
+        },
+        "output_span": {
+          "type": "object",
+          "description": "Optional location of the assertion in the output (offsets or anchors).",
+          "additionalProperties": false,
+          "properties": {
+            "start_char": { "type": "integer", "minimum": 0 },
+            "end_char": { "type": "integer", "minimum": 0 },
+            "start_line": { "type": "integer", "minimum": 1 },
+            "end_line": { "type": "integer", "minimum": 1 },
+            "anchor_start": { "type": "string" },
+            "anchor_end": { "type": "string" }
+          }
+        },
+        "assertion_text": {
+          "type": "string",
+          "description": "Exact surface text of the asserted statement."
+        },
+        "kind": {
+          "type": "string",
+          "description": "Classification of the assertion.",
+          "enum": ["factual", "uncertain", "interpretive", "non_factual"]
+        },
+        "state": {
+          "type": "string",
+          "description": "Trace enforcement outcome for this assertion.",
+          "enum": ["TRACED", "UNCERTAIN", "OMITTED", "REFUSED"]
+        },
+        "supports": {
+          "type": "array",
+          "description": "Support references. For kind=factual and state=TRACED, MUST contain at least one support item.",
+          "items": { "$ref": "#/$defs/SupportPointer" }
+        },
+        "notes": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "kind": { "const": "factual" }, "state": { "const": "TRACED" } },
+            "required": ["kind", "state"]
+          },
+          "then": {
+            "required": ["supports"],
+            "properties": { "supports": { "minItems": 1 } }
+          }
+        }
+      ]
+    },
+
+    "SupportPointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_kind"],
+      "properties": {
+        "source_kind": {
+          "type": "string",
+          "description": "What type of validated canonical object supports this assertion.",
+          "enum": ["exchange_record", "resolved_claim", "evidence_pointer"]
+        },
+        "exchange": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["exchange_ref", "record_id"],
+          "properties": {
+            "exchange_ref": { "$ref": "#/$defs/ContentRef" },
+            "record_id": {
+              "type": "string",
+              "description": "Stable record/statement identifier inside the Exchange."
+            }
+          }
+        },
+        "resolved_claim": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["resolved_claim_ref", "claim_id"],
+          "properties": {
+            "resolved_claim_ref": { "$ref": "#/$defs/ContentRef" },
+            "claim_id": { "type": "string" }
+          }
+        },
+        "evidence": {
+          "type": "object",
+          "description": "Optional evidence pointer payload when source_kind=evidence_pointer.",
+          "additionalProperties": false,
+          "properties": {
+            "source_url": { "type": "string" },
+            "source_id": { "type": "string" },
+            "quote": { "type": "string" },
+            "start_char": { "type": "integer", "minimum": 0 },
+            "end_char": { "type": "integer", "minimum": 0 },
+            "selector": { "type": "string" }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "source_kind": { "const": "exchange_record" } }, "required": ["source_kind"] },
+          "then": { "required": ["exchange"] }
+        },
+        {
+          "if": { "properties": { "source_kind": { "const": "resolved_claim" } }, "required": ["source_kind"] },
+          "then": { "required": ["resolved_claim"] }
+        },
+        {
+          "if": { "properties": { "source_kind": { "const": "evidence_pointer" } }, "required": ["source_kind"] },
+          "then": { "required": ["evidence"] }
+        }
+      ]
+    },
+
+    "Omission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": ["OMIT_UNTRACEABLE", "OMIT_POLICY", "OMIT_TEMPLATE_RULE", "OMIT_INPUT_GAP"]
+        },
+        "message": { "type": "string" },
+        "artifact_id": { "type": "string" },
+        "assertion_id": { "type": "string" },
+        "details": { "type": "object", "additionalProperties": true }
+      }
+    },
+
+    "Uncertainty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": ["UPSTREAM_AMBIGUITY", "UPSTREAM_UNRESOLVED", "POLICY_MARK_UNCERTAIN"]
+        },
+        "message": { "type": "string" },
+        "artifact_id": { "type": "string" },
+        "assertion_id": { "type": "string" },
+        "details": { "type": "object", "additionalProperties": true }
+      }
+    },
+
+    "Refusal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "UNTRACEABLE_ASSERTION",
+            "NEW_FACT_DETECTED",
+            "TEMPLATE_NOT_FOUND",
+            "INPUT_NOT_FOUND",
+            "POLICY_VIOLATION",
+            "DETERMINISM_VIOLATION"
+          ]
+        },
+        "message": { "type": "string" },
+        "artifact_id": { "type": "string" },
+        "assertion_id": { "type": "string" },
+        "details": { "type": "object", "additionalProperties": true }
+      }
+    },
+
+    "Signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alg", "key_id", "sig"],
+      "properties": {
+        "alg": { "type": "string" },
+        "key_id": { "type": "string" },
+        "sig": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

@@ -1,0 +1,1046 @@
+==== VOLUME META ====
+generated_at: 2026-02-27T11:13:07.503534
+title: OTHERS (Misc Folders)
+root_dir: C:\MyCode\kOADigitalEcosystem\kOA_Digital_Ecosystem\docs
+file_count: 8
+total_size_mb: 0.0359
+home: 00_START_HERE.instructions.md
+prev_volume: docs_20260227_111307_07_40-integration.txt
+prev_title: 40-integration
+next_title: 
+short_title: Others
+
+==== FILE_INDEX ====
+ENTRY id=b835a2868346 path="00-overview/faq.md" kind=markdown size=3555 lines=61 chunks=0
+ENTRY id=ebd8c66ed6a0 path="00-overview/glossary.md" kind=markdown size=7902 lines=166 chunks=0
+ENTRY id=41c7df6879c9 path="00-overview/scope.md" kind=markdown size=3743 lines=68 chunks=0
+ENTRY id=6a4d6bef81c9 path="00-overview/system-at-a-glance.md" kind=markdown size=2899 lines=57 chunks=0
+ENTRY id=58427225cad5 path="60-guides/implementers.md" kind=markdown size=5967 lines=173 chunks=0
+ENTRY id=6d21aabce823 path="60-guides/integrators.md" kind=markdown size=5523 lines=160 chunks=0
+ENTRY id=90fbfd6bb1d3 path="60-guides/testing.md" kind=markdown size=4901 lines=149 chunks=0
+ENTRY id=cfd249ad4800 path="60-guides/tooling.md" kind=markdown size=3115 lines=109 chunks=0
+
+==== FILES ====
+
+----- FILE BEGIN -----
+path="00-overview/faq.md"
+id=b835a2868346
+kind=markdown
+size=3555
+lines=61
+chunks=0
+----
+# FAQ
+
+## What is this documentation set?
+This is the **kOA Digital Ecosystem** documentation: how the ecosystem is structured, how its components behave, and how it operates in production.
+
+## What is *not* in this documentation set?
+It does **not** re-specify **Kristal** artifact contracts (schemas, canonicalization rules, signature formats, etc.). Those are owned by the **Kristal v4** documentation and schemas.
+
+## Where is the Kristal spec?
+See: `docs/40-integration/kristal-v4/` (especially `pinned-dependency.md` and `contract-pointers.md`). This is the single place in the kOA docs that points to the pinned Kristal v4 source-of-truth.
+
+## What is “canonical” vs “informative” here?
+- **Canonical for kOA**: ecosystem invariants, operational rules, node responsibilities, and kOA-native artifact contracts (e.g., Orgo Case/Task, Build/Release records).
+- **External canonical**: Kristal artifacts and schemas (Exchange, Runtime Pack, Validation Report, etc.).
+
+## Which artifacts are “kOA-native”?
+Artifacts owned by kOA components (examples):
+- Orgo operational artifacts (Cases, Tasks, Build/Release records)
+- Konnaxion operational state/telemetry envelopes (if defined here)
+Kristal artifacts remain externally specified.
+
+## How do I know what schemas to validate against?
+- For **kOA-native artifacts**, validate against schemas in `docs/30-artifacts/schemas/`.
+- For **Kristal artifacts**, validate against the pinned Kristal v4 schemas referenced in `docs/40-integration/kristal-v4/contract-pointers.md`.
+
+## Why is there a hard “no redundancy” rule?
+Duplicating normative contracts causes drift. kOA docs stay stable by pointing to Kristal v4 as the source-of-truth, and only documenting kOA’s integration constraints and operational policies.
+
+## Where do I start if I’m implementing?
+- `docs/00-overview/system-at-a-glance.md`
+- `docs/10-system/architecture.md`
+- `docs/60-guides/implementers.md`
+- `docs/40-integration/kristal-v4/conformance.md`
+
+## Where do I start if I’m operating?
+- `docs/50-operations/pipeline.md`
+- `docs/50-operations/releases.md`
+- `docs/50-operations/rollback.md`
+- `docs/50-operations/incident-response.md`
+
+## How do changes get made safely?
+- Changes to **kOA** invariants/interfaces: add/update an ADR under `docs/90-reference/adr/`.
+- Changes to **Kristal** contracts: must happen in the pinned Kristal v4 source; then kOA updates its integration profile/conformance docs accordingly.
+
+## What should I do if I find a mismatch between kOA and Kristal?
+Treat it as a **kOA integration bug** (not a Kristal contract bug) unless you are also changing the pinned Kristal version. Update:
+- `docs/40-integration/kristal-v4/koa-profile.md` (policy/constraints)
+- `docs/40-integration/kristal-v4/conformance.md` (tests/acceptance)
+- Any impacted kOA ops/guides that reference the integration behavior
+
+## Does kOA require online connectivity to use Kristal artifacts?
+No by default. Distribution/activation and runtime use should be compatible with offline-first operation; connectivity is a deployment choice, not a contract requirement.
+
+## What are the core components?
+- **Orgo**: workflow/control plane + gating
+- **SenTient**: resolution/reconciliation
+- **Kristal**: truth pivot + compilation (externally specified)
+- **Konnaxion**: distribution/activation + rollback safety
+- **Architect**: deterministic rendering (no new facts)
+- **SwarmCraft**: execution (optional)
+- **EkoH**: ledger/trust mechanisms (if deployed)
+----- FILE END -----
+
+----- FILE BEGIN -----
+path="00-overview/glossary.md"
+id=ebd8c66ed6a0
+kind=markdown
+size=7902
+lines=166
+chunks=0
+----
+# Glossary
+
+**Purpose:** Define the shared vocabulary used across the kOA Digital Ecosystem docs.  
+**Rule:** If a term is *normatively defined by Kristal v4*, this glossary **does not restate** the contract— it points to the Kristal source.
+
+## Conventions
+
+- **Normative (Kristal):** The term’s format/semantics are defined in Kristal v4 docs/schemas.
+- **Normative (kOA):** The term is defined by kOA contracts/policies/operations.
+- **Informative:** Helpful interpretation only.
+
+---
+
+## Terms (A–Z)
+
+### Activation (kOA)
+Atomic switch from one verified Runtime Pack to another on a device/node, with deterministic rollback guarantees.
+
+### Artifact (kOA)
+A typed payload crossing a boundary between components (e.g., Case, Task, Build Record, Release Record).  
+If the artifact is a Kristal artifact (Claim-IR, Exchange, Runtime Pack, Validation Report), see Kristal docs.
+
+### Authority Registry (Kristal)
+Normative registry of trust roots and acceptance rules for signatures.  
+See Kristal: `02-schemas/authority-registry.schema.json`.
+
+### Blueprint (kOA)
+The pinned bundle of schemas/config/policies that governs a build and makes downstream outputs reproducible.
+
+### Build (kOA)
+One governed pipeline run producing outputs (at minimum: Exchange + Runtime Pack), with recorded inputs/config/policies and audit linkage.
+
+### Build Record (kOA)
+Operational evidence of a build: inputs, pinned blueprint, policy selections, component identities, outputs, and gate results.
+
+### Canonicalization (Kristal)
+Deterministic normalization of JSON/signing targets used for hashing/signatures and stable identity.  
+See Kristal: `01-core-spec/ids-canonicalization-hashing.md`.
+
+### Canonical Truth (kOA)
+Truth that exists only after deterministic validation and compilation into a Kristal Exchange artifact (immutable once published).
+
+### Case (Orgo Case) (kOA)
+Long-lived container for operational work, context, and governance state; parent of Tasks.
+
+### Claim-IR (Kristal)
+Proposal-format for extracted claims (schema-constrained, uncertainty + evidence explicit).  
+See Kristal: `02-schemas/claim-ir.schema.json`.
+
+### Compile (kOA)
+The stage that produces Kristal artifacts (Exchange + Runtime Pack) from validated inputs. Must be blocked if validation fails.
+
+### Compatibility Policy (kOA)
+Rules for accepting/activating artifacts across versions (schemas, policies, runtime constraints); used by Orgo and Konnaxion.
+
+### Conformance (kOA)
+The property of an implementation satisfying the ecosystem’s invariants and required contracts; typically enforced via tests and gates.
+
+### Determinism (kOA)
+Same pinned inputs + config + policies → identical (or canonical-identical) outputs; enforced at gates and required for reproducibility.
+
+### Deterministic Gate (kOA)
+Acceptance checkpoint that is deterministic and fail-closed (e.g., validation gate; signature verification gate).
+
+### Distribution (kOA)
+Packaging, publishing, fetching, verifying, caching, and activating Runtime Packs across devices/nodes.
+
+### Downgrade Prevention (kOA)
+Rules preventing activation of an older (or policy-incompatible) Runtime Pack when it violates safety/compatibility constraints.
+
+### Exchange (Kristal Exchange) (Kristal)
+Canonical, content-addressed truth artifact compiled after validation.  
+See Kristal: `02-schemas/exchange-manifest.schema.json` and core spec.
+
+### Fail-Closed (kOA)
+If declared integrity material (hashes/signatures/refs) is missing/invalid/mismatched, the operation must stop (no best-effort).
+
+### Federation (Kristal)
+Multi-authority model for shard/federation manifests, acceptance rules, and trust roots.  
+See Kristal: `02-schemas/exchange-federation-manifest.schema.json`.
+
+### Hash / Content Hash (Kristal)
+Canonical hash of signing target / content; used for IDs and verification.  
+See Kristal: `01-core-spec/ids-canonicalization-hashing.md`.
+
+### Integrity Material (kOA)
+Hashes, signatures, key references, and authority metadata required to verify an artifact. Verification is fail-closed.
+
+### Konnaxion (kOA)
+Distribution and platform layer facet responsible for pack fetch/verify/cache/activate/rollback and offline-first delivery behavior.
+
+### Mandate Bundle (kOA)
+Pinned policy/mandate context required for operation; if absent or revoked, the system must not operate.
+
+### No Compile on Fail (kOA)
+Hard gate: if validation fails, compilation (Exchange/Runtime Pack) must not run.
+
+### No New Facts Downstream (kOA)
+Render/execution layers must not invent facts; they must trace statements back to validated lineage or omit/refuse deterministically.
+
+### Orgo (kOA)
+Control plane: orchestrates pipeline stages, enforces gating, records Build/Release records, and governs operational work (Cases/Tasks).
+
+### Pack (Runtime Pack) (Kristal)
+Derived offline-executable artifact compiled from Exchange; consumed by Konnaxion/runtime.  
+See Kristal: `02-schemas/runtime-pack-manifest.schema.json`.
+
+### Pack Index (kOA)
+Signed/verified index describing available packs in a channel (e.g., latest/pinned/revoked), used by Konnaxion.
+
+### Policy Selections (kOA)
+The set of enabled policies/profiles used for a build/run; must be recorded for reproducibility and audit.
+
+### Provenance (kOA)
+Recorded lineage linking outputs to inputs, configs, policies, and gate results (Build Record + artifact manifests).
+
+### Render Bundle (Kristal integration surface)
+Deterministic renderer output envelope with trace coverage and events.  
+If you treat it as Kristal-normative, link to Kristal integration docs; if you treat it as kOA-native, define it in `docs/30-artifacts/`.
+
+### Release Record (kOA)
+Operational record tying a build’s outputs to distribution intent (channels/cohorts/timestamps/status), enabling traceability and rollback.
+
+### Resolution (SenTient) (kOA integration)
+Mapping surfaces to candidates (QIDs/PIDs) + literal normalization + explicit ambiguity preservation.  
+Kristal defines the Resolved Claim-IR artifact schema.
+
+### Resolved Claim-IR (Kristal)
+Resolution output format consumed by validation/compile.  
+See Kristal: `02-schemas/resolved-claim-ir.schema.json`.
+
+### Rollback (kOA)
+Deterministic restoration to a known-good active pack state following activation failure, policy violation, or operator action.
+
+### Schema (kOA)
+A machine-validated contract defining artifact structure. Kristal schemas remain authoritative for Kristal artifacts.
+
+### Shard (Kristal)
+Partitioned Exchange unit with its own manifest and acceptance rules.  
+See Kristal: `02-schemas/exchange-shard-manifest.schema.json`.
+
+### Signature / Signing Profile (Kristal)
+Signature envelope and verification semantics (key_id, alg, payload_hash, etc.).  
+See Kristal: `01-core-spec/signatures-trust.md`.
+
+### SenTient (kOA)
+Resolution engine responsible for producing Resolved Claim-IR from Claim-IR while preserving uncertainty and determinism.
+
+### Task (Orgo Task) (kOA)
+Canonical unit of operational work with lifecycle state; executable by downstream actors (e.g., SwarmCraft) under governance rules.
+
+### Trace Map (Render) (kOA)
+Mapping from rendered assertions to supporting validated lineage (claims, entities, evidence); used to enforce “no new facts.”
+
+### Trust Roots (Kristal + kOA deployment)
+Pinned roots used to verify signatures (authority registry / deployment policy).  
+See Kristal: `02-schemas/authority-registry.schema.json`.
+
+### Validation Report (Kristal)
+Deterministic acceptance output from validation stage; compile must be blocked on failure.  
+See Kristal: `02-schemas/validation-report.schema.json`.
+
+### Versioning (kOA)
+Rules for evolving schemas/policies without breaking verification, reproducibility, or activation safety (see compatibility policy).
+
+---
+----- FILE END -----
+
+----- FILE BEGIN -----
+path="00-overview/scope.md"
+id=41c7df6879c9
+kind=markdown
+size=3743
+lines=68
+chunks=0
+----
+# Documentation Scope
+
+This documentation describes the **kOA Digital Ecosystem**: a contract-driven pipeline and operating model that turns inputs into **validated knowledge artifacts** (via Kristal) and then distributes, renders, executes, and governs outcomes across the ecosystem. :contentReference[oaicite:0]{index=0}
+
+## Goals
+
+- Provide a clear, implementable understanding of **kOA components**, their responsibilities, and their interfaces.
+- Define **kOA-owned contracts** (Orgo workflow objects, release/build records, Konnaxion operational state, etc.).
+- Specify **operational behavior** (gates, safety, rollback, observability, incident response).
+- Make integration with **Kristal v4** explicit without duplicating Kristal’s normative contracts. :contentReference[oaicite:1]{index=1}
+
+## Non-goals
+
+- Re-stating or re-implementing Kristal’s normative artifact definitions (schemas, canonicalization, hashing, signing targets).
+- Providing product marketing, UX copy, or user manuals for specific applications.
+- Defining deployment topology, cloud-specific infrastructure, or vendor-specific operational procedures beyond general guidance.
+
+## Normative boundaries (ownership)
+
+### Kristal-owned (external normative source)
+Kristal defines the normative contracts for:
+- Claim-IR, Resolved Claim-IR, Validation Report
+- Exchange Manifest / Exchange content-addressed identity
+- Runtime Pack Manifest and offline execution constraints
+- Canonicalization identifiers and signature/hash shapes (e.g., `canonicalization_profile`, `canonicalization_version`, `content_hash`, `signatures`) :contentReference[oaicite:2]{index=2}
+
+kOA docs must **reference** these, not duplicate them.
+
+### kOA-owned (normative here)
+kOA defines the normative contracts for:
+- Orgo governance objects (Cases/Tasks), routing taxonomy, and workflow stage gating
+- Build/Release records (operational evidence linking inputs → outputs)
+- Konnaxion distribution/activation/rollback state and operational signals
+- Ecosystem-level invariants (truth boundary enforcement, fail-closed policies, deterministic gate behavior)
+
+## What “no redundancy” means in practice
+
+- If a page needs to mention a Kristal artifact, it should:
+  1) name the artifact and where it sits in the pipeline,
+  2) specify **kOA-specific requirements around it** (e.g., “Orgo must block publish on failed verification”),
+  3) link to the pinned Kristal spec/schema for field-level definitions.
+
+- kOA docs should never carry “illustrative manifests” for Kristal artifacts unless they are **verbatim** copied from the pinned Kristal version and clearly marked as such (preferred: link instead).
+
+## Audiences
+
+- **Implementers**: building services that produce/consume artifacts and participate in gates.
+- **Integrators**: connecting external systems to ingestion, distribution, or rendering.
+- **Operators**: running builds, releases, rollbacks, incident response, and audits.
+- **Architects**: evolving contracts and invariants through ADRs.
+
+## Change control
+
+Any change to:
+- an invariant,
+- a kOA-owned artifact schema,
+- a gate rule or safety policy,
+must be accompanied by an ADR and a conformance test update (where applicable). :contentReference[oaicite:3]{index=3}
+
+## Suggested reading order
+
+1. `docs/index.md`
+2. `docs/00-overview/system-at-a-glance.md`
+3. `docs/10-system/*` (architecture/lifecycle/components/boundaries)
+4. `docs/20-nodes/*` (node-by-node operational contracts)
+5. `docs/30-artifacts/*` (kOA-owned artifacts)
+6. `docs/40-integration/kristal-v4/*` (pinned dependency + kOA profile + conformance)
+7. `docs/50-operations/*` and `docs/60-guides/*` (how to run and build)
+----- FILE END -----
+
+----- FILE BEGIN -----
+path="00-overview/system-at-a-glance.md"
+id=6a4d6bef81c9
+kind=markdown
+size=2899
+lines=57
+chunks=0
+----
+# System at a Glance
+
+**Purpose:** One-page mental model of the kOA ecosystem: what it is, what flows through it, and where “truth” lives.
+
+## What this system does
+
+kOA turns messy inputs into **validated, canonical knowledge** and then safely distributes and uses that knowledge in offline-capable products and workflows.
+
+## The stage spine (end-to-end)
+
+1. **Ingest** raw inputs (snapshots + provenance)
+2. **Extract** structured proposals (claims)
+3. **Resolve** ambiguity (entities, properties, literals)
+4. **Validate** deterministically (accept/reject with a report)
+5. **Compile** canonical knowledge + a portable offline pack
+6. **Distribute** packs with fail-closed verification
+7. **Render** deterministic user-facing output with trace coverage
+8. **Execute** work (tasks) with telemetry
+9. **Feedback** becomes new governed work (never mutates canon)
+
+## Core components (who does what)
+
+* **Orgo (control plane):** orchestrates stages, enforces gates, records operational evidence, drives releases.
+* **SenTient (resolver):** turns ambiguous surfaces into explicit, typed resolution outputs (keeps ambiguity explicit when unresolved).
+* **Kristal (truth pivot):** compiles canonical truth artifacts (Exchange) and derived offline artifacts (Runtime Pack).
+* **Konnaxion (distribution + platform):** verifies/activates/rolls back packs; powers offline-first delivery and product navigation.
+* **Architect (renderer):** produces deterministic natural-language (or other outputs) that cannot introduce new facts and must trace.
+* **SwarmCraft (execution):** executes tasks into deliverables under constraints; emits telemetry.
+
+## Artifact families (what crosses boundaries)
+
+* **Pre-truth artifacts:** snapshots, claim proposals, resolution outputs, validation reports
+* **Canonical truth artifacts:** the compiled knowledge source of truth
+* **Derived distribution artifacts:** portable offline packs + indexes
+* **Operational artifacts:** cases/tasks, build/release records, activation/rollback records, telemetry events
+
+## Where “truth” lives
+
+* “Truth” exists only as **typed artifacts produced after deterministic validation + compilation**.
+* Downstream systems (rendering, execution, social/feedback) must not invent or mutate canonical truth.
+
+## What this repo is responsible for
+
+This repo documents:
+
+* kOA’s **system behavior**, responsibilities, operations, and kOA-owned artifacts (workflow + distribution + execution).
+* The **integration stance**: how kOA depends on Kristal (pinned version, compatibility expectations, conformance checks).
+
+This repo does **not** re-specify Kristal artifact formats/schemas.
+
+## Next reads
+
+* `docs/10-system/architecture.md`
+* `docs/10-system/lifecycle.md`
+* `docs/20-nodes/index.md`
+* `docs/40-integration/kristal-v4/index.md`
+* `docs/50-operations/pipeline.md`
+----- FILE END -----
+
+----- FILE BEGIN -----
+path="60-guides/implementers.md"
+id=58427225cad5
+kind=markdown
+size=5967
+lines=173
+chunks=0
+----
+# Implementers Guide (kOA)
+
+**Audience:** engineers implementing kOA components or integrating existing systems into the kOA stage spine.  
+**Normative scope:** kOA behavior and integration expectations.  
+**External normative dependencies:** Kristal v4 artifact contracts (pinned in `../40-integration/kristal-v4/`).
+
+---
+
+## 1) What you are implementing
+
+kOA is a contract-driven ecosystem with a strict stage spine:
+
+1) Ingest inputs (Orgo)  
+2) Extract Claim-IR  
+3) Resolve to Resolved Claim-IR (SenTient)  
+4) Validate (deterministic gate)  
+5) Compile (Kristal) → Exchange + Runtime Pack  
+6) Distribute / activate / rollback (Konnaxion)  
+7) Render (Architect-Render)  
+8) Execute (SwarmCraft / local runtime)  
+9) Feedback (governed; creates new work)
+
+Your implementation is conformant if:
+- it respects the stage ordering and gates,
+- it produces/consumes the correct artifact types at boundaries,
+- it is deterministic where required, and
+- it is fail-closed where required.
+
+---
+
+## 2) Hard rules (must not violate)
+
+### 2.1 Truth boundary
+Only validated + compiled artifacts become canonical. Downstream components must not mutate canon.
+
+### 2.2 No compile on fail
+Validation failure must block compilation and publication.
+
+### 2.3 Fail-closed distribution
+Activation must verify integrity and compatibility before switching active packs.
+
+### 2.4 Deterministic rendering
+Rendering must be deterministic and must not introduce new facts.
+
+---
+
+## 3) Boundary contracts you must treat as external truth
+
+Do not re-implement or “re-interpret” these contracts in kOA docs or code:
+- Kristal Exchange contracts
+- Runtime Pack contracts
+- Canonicalization profiles/versions
+- Hash/sign target rules
+
+Instead, depend on the pinned Kristal v4 reference and schemas:
+- `../40-integration/kristal-v4/pinned-dependency.md`
+- `../40-integration/kristal-v4/contract-pointers.md`
+
+---
+
+## 4) Component implementation notes
+
+### 4.1 Orgo (governance + pipeline)
+Implement Orgo as the deterministic controller:
+- enforces stage ordering and gates
+- records content-addressed references for stage outputs
+- emits Build/Release records
+- blocks compilation on validation failure
+
+Minimum implementation deliverables:
+- stage runner with stable state machine
+- artifact store interface (content refs)
+- policy selection handling
+- audit trail (immutable records, append-only where possible)
+
+### 4.2 Extractors (inputs → Claim-IR)
+Extractor outputs are pre-truth:
+- must be schema-valid for Claim-IR (as defined in Kristal)
+- must be reproducible given the same input snapshot set
+- if using probabilistic extraction, pin seeds/models or freeze outputs upstream
+
+### 4.3 SenTient (Claim-IR → Resolved Claim-IR)
+Resolution must:
+- preserve ambiguity explicitly
+- normalize literals deterministically
+- produce stable candidate ordering with tie-breakers
+- emit stable warnings/errors (codes not free-text)
+
+### 4.4 Validator (deterministic gate)
+Validation must:
+- accept the same inputs and produce the same Validation Report output
+- produce stable error codes and categories
+- be fail-closed in Orgo (no compile if validation fails)
+
+### 4.5 Kristal compiler integration
+You do not “define” Kristal outputs here. You:
+- call the pinned Kristal compiler
+- persist outputs and references
+- publish artifacts through Orgo’s release workflow
+
+### 4.6 Konnaxion (distribution/activation)
+Implement distribution as:
+- verify → stage → atomic switch
+- deterministic rollback
+- downgrade prevention (if policy requires)
+- telemetry emission to Orgo
+
+### 4.7 Architect (Strategy vs Render)
+- Strategy proposes work (plans/cases/tasks) but does not mutate canon.
+- Render produces deterministic bundles with trace coverage.
+
+### 4.8 SwarmCraft / Runtime (execution)
+Execution must:
+- treat packs as read-only
+- record telemetry deterministically (structure stable)
+- surface failures with stable codes
+- never mutate canon directly (feedback becomes new governed work)
+
+---
+
+## 5) Required records (kOA-owned)
+
+kOA implementations must produce these operational records (schemas are in `../30-artifacts/schemas/`):
+- Build Record
+- Release Record
+- Orgo Case / Task
+- (Optional) Konnaxion State / Activation Records (if standardized)
+
+These are kOA-owned and may evolve independently of Kristal, but must not conflict with Kristal artifact contracts.
+
+---
+
+## 6) Determinism checklist
+
+Your component should answer “yes” to:
+
+- Do identical pinned inputs produce identical outputs?
+- Is ordering stable and explicitly defined?
+- Are failure modes stable (codes/categories) across runs?
+- Are all external dependencies either pinned or forbidden in deterministic mode?
+- Are seeds/models pinned when probabilistic behavior exists?
+
+If any answer is “no”, the nondeterminism must be moved upstream of the truth boundary and frozen as an input artifact.
+
+---
+
+## 7) Security checklist
+
+- No secret material in logs/telemetry.
+- Verify pack integrity before use (fail-closed).
+- Sandbox untrusted code/data (especially pack routines).
+- Deny network access by default in deterministic modes.
+- Enforce quotas/timeouts; prefer explicit policy configuration.
+
+---
+
+## 8) Conformance tests you should run
+
+Minimum tests (see `../40-integration/kristal-v4/conformance.md`):
+- deterministic rebuild (same inputs/config/policy → same IDs/hashes)
+- fail-closed validation/activation behavior
+- deterministic rendering outputs and trace coverage
+- rollback determinism
+
+---
+
+## 9) Versioning and compatibility
+
+- Treat Kristal as a pinned dependency; upgrades require an explicit change record and conformance rerun.
+- kOA record schemas should use SemVer and be backward compatible where possible.
+- Any change affecting gates, determinism, or activation semantics requires an ADR.
+
+---
+----- FILE END -----
+
+----- FILE BEGIN -----
+path="60-guides/integrators.md"
+id=6d21aabce823
+kind=markdown
+size=5523
+lines=160
+chunks=0
+----
+# Integrator Guide (kOA)
+
+## Purpose
+This guide explains how to integrate a system into the kOA Digital Ecosystem as a producer/consumer of kOA-native operational artifacts and as a consumer/producer of Kristal artifacts **via the pinned Kristal v4 dependency**.
+
+This guide does **not** redefine Kristal schemas or artifact formats.
+
+---
+
+## 1) Integration entry points
+
+### A) Integrating as an input producer
+You provide upstream inputs that eventually become canonical via validation + Kristal compilation.
+
+Typical integrations:
+- ingest raw data feeds into the input pipeline
+- submit curated evidence bundles
+- provide domain-specific extractors that emit Claim-IR candidates (if you operate that stage)
+
+You must:
+- provide stable provenance metadata
+- support content-addressed input snapshots (or equivalent reproducible input references)
+- use deterministic processing settings where required by policy
+
+### B) Integrating as a pipeline stage service
+You implement a stage component (e.g., extractor, resolver, validator adjunct) controlled by Orgo.
+
+You must:
+- accept inputs as explicit artifact references (not implicit shared state)
+- produce outputs as explicit artifacts (content-addressed where applicable)
+- emit stable reason codes on failure
+- be idempotent under retry
+
+### C) Integrating as a distribution/activation consumer
+You run Konnaxion or consume Konnaxion outputs.
+
+You must:
+- verify and activate runtime artifacts fail-closed
+- support deterministic rollback
+- emit operational state/telemetry back to Orgo
+
+See `docs/50-operations/rollback.md` and `docs/30-artifacts/konnaxion-state.md`.
+
+---
+
+## 2) Normative sources (do not duplicate)
+
+### Kristal artifacts
+All Kristal artifacts (Exchange, Runtime Pack, Validation Report, etc.) are externally specified.
+
+Use:
+- `docs/40-integration/kristal-v4/pinned-dependency.md`
+- `docs/40-integration/kristal-v4/contract-pointers.md`
+- `docs/40-integration/kristal-v4/conformance.md`
+
+### kOA-native artifacts
+kOA-native operational artifacts are specified here:
+- `docs/30-artifacts/` and `docs/30-artifacts/schemas/`
+
+---
+
+## 3) Required integration contracts
+
+### A) Identity and references
+Your integration should treat artifact references as immutable and stable:
+- never overwrite canonical artifacts in place
+- always create a new artifact/ref for changes
+- propagate references through Orgo (Build/Release records) rather than “out-of-band” IDs
+
+### B) Determinism requirements
+If your component participates in a deterministic gate, you must:
+- pin non-deterministic dependencies (models, templates, configs)
+- avoid time-based randomness unless explicitly recorded as an input
+- produce stable outputs for the same inputs
+
+### C) Fail-closed behavior
+If you cannot verify or validate:
+- do not proceed
+- return a stable failure reason code
+- emit enough telemetry for an operator to diagnose without guessing
+
+---
+
+## 4) Integration patterns
+
+### Pattern 1 — Upstream feed → Orgo ingest
+1. Your system publishes inputs + provenance.
+2. Orgo ingests and records snapshot references.
+3. Downstream stages proceed under Orgo control.
+
+Checklist:
+- provenance fields complete
+- snapshot references immutable
+- inputs discoverable for rebuild
+
+### Pattern 2 — External validator adjunct
+1. Orgo runs the canonical validation gate.
+2. Your service provides additional checks (lint, domain constraints, policy evaluation).
+3. Results are returned as structured findings.
+4. Orgo decides pass/fail under policy.
+
+Checklist:
+- deterministic check outputs
+- stable finding IDs and reason codes
+- no mutation of truth artifacts
+
+### Pattern 3 — Runtime Pack distribution mirror
+1. Your system mirrors pack distribution to edge/offline environments.
+2. Konnaxion verifies signatures/hashes.
+3. Activation occurs atomically, rollback deterministic.
+
+Checklist:
+- fail-closed verification
+- multi-version cache supported
+- rollback path tested
+
+---
+
+## 5) Required telemetry
+
+You should emit (minimum):
+- build/release correlation IDs (from Orgo)
+- stage timing (start/end/fail)
+- stable error codes + human-readable summaries
+- references to logs/traces (not raw blobs in-band)
+
+If you operate Konnaxion:
+- emit Konnaxion State records (`docs/30-artifacts/konnaxion-state.md`)
+- report activation/rollback outcomes and health signals
+
+---
+
+## 6) Security expectations
+
+Integrators must:
+- secure any signing/verifying keys (never embed in jobs or logs)
+- authenticate Orgo control-plane requests
+- enforce least privilege for stage execution workers
+- log privileged actions with audit-grade detail
+
+---
+
+## 7) Compatibility and migration
+
+If you are migrating from earlier Kristal conventions:
+- follow `docs/40-integration/kristal-v4/legacy-compat.md`
+- do not emit legacy spellings at boundaries
+- track normalization metrics until legacy usage is eliminated
+
+---
+
+## 8) Go-live checklist
+
+- [ ] You can run end-to-end with deterministic settings (where required).
+- [ ] You handle retries idempotently.
+- [ ] You emit stable reason codes on failure.
+- [ ] You validate against the correct schemas (kOA-native locally; Kristal via pinned dependency).
+- [ ] You verify/activate/rollback fail-closed (distribution consumers).
+- [ ] You provide telemetry refs (logs/traces/metrics) tied to build/release IDs.
+- [ ] You have an operator escalation path for failed gates/rollouts.
+----- FILE END -----
+
+----- FILE BEGIN -----
+path="60-guides/testing.md"
+id=90fbfd6bb1d3
+kind=markdown
+size=4901
+lines=149
+chunks=0
+----
+# Testing (kOA)
+
+**File:** `docs/60-guides/testing.md`  
+**Normative scope:** kOA testing expectations and test organization.  
+**Non-normative:** Kristal artifact schemas/formats (external); this guide references the pinned Kristal v4 dependency for schema validation.
+
+---
+
+## 1) Purpose
+
+Define the kOA test strategy and minimum suite required to ensure:
+- deterministic behavior across the pipeline,
+- correct stage gating (“no compile on fail”),
+- fail-closed verification and activation,
+- conformance to the pinned Kristal v4 schemas where kOA produces/consumes Kristal artifacts,
+- reliable operations (rollback, incident handling, observability).
+
+---
+
+## 2) Test layers
+
+### 2.1 Unit tests (component-local)
+Scope:
+- deterministic pure functions
+- schema helpers
+- validators
+- policy evaluators
+- hash/signature utilities (kOA side)
+
+Examples:
+- normalization helpers (SenTient)
+- manifest parsing and strict validation logic
+- downgrade-prevention logic (Konnaxion)
+
+### 2.2 Contract tests (boundary artifacts)
+Scope:
+- producer emits artifact that validates against its schema
+- consumer rejects malformed artifacts
+- stable error codes and failure shapes
+
+Rule:
+- For Kristal artifacts, use the **pinned Kristal v4 schemas** (do not copy schemas into kOA).  
+See: `docs/40-integration/kristal-v4/pinned-dependency.md`.
+
+### 2.3 Integration tests (multi-component)
+Scope:
+- Orgo → Extract → SenTient → Validate → (Kristal compile) → Konnaxion verify/activate
+- “happy path” and controlled failures
+- telemetry emission
+
+### 2.4 End-to-end tests (release simulation)
+Scope:
+- build + publish + staged rollout
+- cohort targeting
+- rollback under controlled conditions
+- audit evidence completeness
+
+---
+
+## 3) Minimum required test suite (kOA)
+
+### 3.1 Determinism
+- **Rerun determinism**: identical pinned inputs/resources/policies → identical outputs
+- **Ordering determinism**: stable ordering for lists/maps; no nondeterministic iteration
+- **Golden fixtures**: fixed fixtures for:
+  - Claim-IR
+  - Resolved Claim-IR
+  - Validation Report
+  - Runtime Pack verification flows
+
+### 3.2 Gate semantics
+- **No compile on fail**: validation failure prevents any publish/packaging step
+- **Explicit failure artifacts**: failures produce structured reports, not partial truth
+
+### 3.3 Schema conformance
+- Validate all emitted artifacts against their schemas.
+- For Kristal artifacts, validate against pinned Kristal v4 schemas.
+- For kOA-native artifacts (Orgo Task/Case, Build Record, Release Record, etc.), validate against kOA schemas under `docs/30-artifacts/schemas/`.
+
+### 3.4 Verification + activation (fail-closed)
+- Corrupted payload hash → activation must fail
+- Missing payload → activation must fail
+- Invalid signature/trust root → activation must fail
+- Schema invalid → activation must fail
+- Compatibility mismatch / downgrade attempt → activation must fail
+
+### 3.5 Rollback
+- Rollback to last-known-good is deterministic
+- Rollback emits required audit events and telemetry
+- Partial activation cannot occur (atomic switch verified)
+
+### 3.6 Observability and audit
+- Required structured events are emitted for:
+  - stage start/finish
+  - validation outcomes
+  - verification outcomes
+  - activation/rollback
+- Evidence links exist for:
+  - Build Record
+  - Release Record
+  - active pack reference (and history)
+
+---
+
+## 4) Test data and fixtures
+
+### 4.1 Fixture categories
+- **tiny**: minimal valid artifacts for fast checks
+- **golden**: representative “real” artifacts for regression
+- **adversarial**: malformed/edge-case artifacts
+- **compat**: multi-version artifacts to test downgrade prevention and compatibility policies
+
+### 4.2 Fixture management
+- Fixtures must be content-addressed and versioned
+- Any fixture change requires:
+  - reason
+  - expected behavior update
+  - snapshot of previous expected outputs (for auditability)
+
+---
+
+## 5) Suggested CI gates
+
+Minimum CI pipeline stages:
+1. Lint / static checks
+2. Unit tests
+3. Contract tests (schemas)
+4. Integration tests (pipeline spine)
+5. End-to-end rollout simulation (nightly or pre-release)
+6. Conformance report publication (kOA-native artifact, optional)
+
+---
+
+## 6) Failure triage playbook (testing perspective)
+
+When a test fails, capture:
+- pinned versions (code, policy bundle, resource bundles, Kristal dependency)
+- input references (snapshots/fixtures)
+- full diagnostics artifacts (validation report, verification logs)
+- reproduction command or harness
+
+---
+
+## 7) Related docs
+
+- Conformance checklist: `docs/40-integration/kristal-v4/conformance.md`
+- Operations pipeline: `docs/50-operations/pipeline.md`
+- Rollout/rollback: `docs/50-operations/rollback.md`
+- Determinism: `docs/10-system/determinism.md`
+----- FILE END -----
+
+----- FILE BEGIN -----
+path="60-guides/tooling.md"
+id=cfd249ad4800
+kind=markdown
+size=3115
+lines=109
+chunks=0
+----
+# Tooling
+
+**Purpose:** Describe the tooling expectations for working with kOA docs, artifacts, builds, releases, and conformance—without embedding Kristal contract definitions.
+
+## 1) Documentation toolchain (recommended)
+
+* **Markdown-first** docs under `docs/`
+* A static site generator (pick one):
+
+  * MkDocs (simple)
+  * Docusaurus (richer)
+  * Sphinx/MD (if you already use it)
+
+Baseline expectations:
+
+* Link checking in CI (no broken internal links)
+* Spellcheck / style lint (optional)
+* Build the docs site on every main-branch merge
+
+## 2) Schema and contract tooling
+
+kOA-owned schemas live under:
+
+* `docs/30-artifacts/schemas/`
+
+Recommended tooling:
+
+* JSON Schema validation in CI (Draft 2020-12)
+* Schema versioning policy:
+
+  * bump `urn:koa:schema:<name>:<major>` when breaking
+  * semver `record_version` inside records (e.g., `1.0.0`)
+
+Kristal schemas:
+
+* Must be referenced from the pinned Kristal v4 dependency (do not copy/paste into kOA).
+
+## 3) Build tooling (Orgo)
+
+Minimum CLI/automation capabilities:
+
+* `orgo build start` (create build + record trigger)
+* `orgo build status <build_id>`
+* `orgo build artifacts <build_id>` (list content refs)
+* `orgo build export <build_id>` (export Build Record + referenced metadata)
+
+Recommended:
+
+* Determinism checks (same inputs/policy/toolchain → same content refs)
+* Artifact store client tooling (push/pull by content ref)
+
+## 4) Release tooling
+
+Minimum CLI/automation capabilities:
+
+* `orgo release create --build <id> --channel <name> --cohort <selector>`
+* `orgo release promote --release <id> --percent <n>`
+* `orgo release pin --release <id> --pack <ref>`
+* `orgo release rollback --release <id> [--policy pinned|lkg]`
+* `orgo release status <id>`
+
+Konnaxion-side tools (often separate):
+
+* `konnaxion verify <pack_ref>`
+* `konnaxion activate <pack_ref>`
+* `konnaxion rollback [--to <pack_ref>|--policy lkg]`
+* `konnaxion active`
+
+## 5) Conformance and validation tooling
+
+kOA should maintain a conformance suite that checks:
+
+* Build Record schema validity
+* Release Record schema validity
+* Konnaxion activation invariants (fail-closed, atomic, deterministic rollback)
+* Kristal artifact conformance via pinned Kristal schemas:
+
+  * Exchange/Pack artifacts validate against the pinned spec
+  * canonicalization identifiers match the pinned requirements
+  * signatures/keys policy enforced (as configured in kOA profile)
+
+## 6) Operational observability tooling
+
+Minimum:
+
+* Structured logs for build/release/activation events
+* Metrics export:
+
+  * build stage durations
+  * validation pass/fail
+  * activation success/fail
+  * rollback events and triggers
+* Trace/audit store for immutable records
+
+Recommended:
+
+* Dashboard templates per channel/cohort
+* Alert rules tied to rollback triggers
+
+## 7) Repo maintenance tooling (quality gates)
+
+* Pre-commit hooks (format + lint)
+* CI gates:
+
+  * docs build
+  * link check
+  * schema validation
+  * conformance tests
+  * security scanning for dependencies (as applicable)
+----- FILE END -----

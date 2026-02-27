@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://koa.example/schemas/konnaxion-state.schema.json",
+  "title": "Konnaxion State",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "state_id",
+    "instance_id",
+    "environment",
+    "created_at",
+    "active",
+    "installed",
+    "pins",
+    "last_attempt",
+    "health",
+    "telemetry_refs"
+  ],
+  "properties": {
+    "state_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "instance_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "environment": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+
+    "active": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["channel", "pack_id", "activated_at"],
+      "properties": {
+        "channel": { "type": "string", "minLength": 1 },
+        "pack_id": { "type": "string", "minLength": 1 },
+        "activated_at": { "type": "string", "format": "date-time" },
+        "exchange_ref": { "type": "string" }
+      }
+    },
+
+    "installed": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pack_id", "installed_at", "manifest_ref", "status"],
+        "properties": {
+          "pack_id": { "type": "string", "minLength": 1 },
+          "installed_at": { "type": "string", "format": "date-time" },
+          "manifest_ref": { "type": "string", "minLength": 1 },
+          "status": {
+            "type": "string",
+            "enum": ["AVAILABLE", "VERIFYING", "VERIFIED", "FAILED", "REVOKED"]
+          },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+
+    "pins": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["revoked_pack_ids"],
+      "properties": {
+        "pinned_pack_id": { "type": "string" },
+        "revoked_pack_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+
+    "last_attempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "status", "started_at"],
+      "properties": {
+        "type": { "type": "string", "enum": ["VERIFY", "ACTIVATE", "ROLLBACK"] },
+        "target_pack_id": { "type": "string" },
+        "status": { "type": "string", "enum": ["SUCCEEDED", "FAILED"] },
+        "reason_code": { "type": "string", "minLength": 1 },
+        "started_at": { "type": "string", "format": "date-time" },
+        "finished_at": { "type": "string", "format": "date-time" },
+        "details": { "type": "object" }
+      }
+    },
+
+    "health": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "signals"],
+      "properties": {
+        "status": { "type": "string", "enum": ["HEALTHY", "DEGRADED", "UNHEALTHY", "UNKNOWN"] },
+        "signals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "value"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "value": {},
+              "unit": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+
+    "telemetry_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "logs": { "type": "string" },
+        "trace": { "type": "string" },
+        "metrics": { "type": "string" }
+      }
+    }
+  }
+}

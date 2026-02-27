@@ -1,3 +1,28 @@
+==== VOLUME META ====
+generated_at: 2026-02-27T11:13:07.411259
+title: ROOT FILES
+root_dir: C:\MyCode\kOADigitalEcosystem\kOA_Digital_Ecosystem\docs
+file_count: 1
+total_size_mb: 0.0025
+home: 00_START_HERE.instructions.md
+next_volume: docs_20260227_111307_02_20-nodes.txt
+prev_title: 
+next_title: 20-nodes
+short_title: Root
+
+==== FILE_INDEX ====
+ENTRY id=7d7896f50b96 path="index.md" kind=markdown size=2635 lines=46 chunks=0
+
+==== FILES ====
+
+----- FILE BEGIN -----
+path="index.md"
+id=7d7896f50b96
+kind=markdown
+size=2635
+lines=46
+chunks=0
+----
 # kOA Digital Ecosystem Documentation
 
 kOA is an ecosystem for producing, distributing, and operating deterministic knowledge-backed runtime behavior across environments. It defines the **system architecture**, **node responsibilities**, **kOA-owned artifacts**, and **operational workflows**. Kristal defines the **normative boundary artifacts** (Exchange, Runtime Pack, Render Bundle, etc.).
@@ -44,3 +69,4 @@ See: `40-integration/kristal-v4/`
 * Kristal v4 integration entry: `40-integration/kristal-v4/index.md`
 * Pinned Kristal v4 dependency: `40-integration/kristal-v4/pinned-dependency.md`
 * kOA profile and conformance: `40-integration/kristal-v4/koa-profile.md`, `40-integration/kristal-v4/conformance.md`
+----- FILE END -----

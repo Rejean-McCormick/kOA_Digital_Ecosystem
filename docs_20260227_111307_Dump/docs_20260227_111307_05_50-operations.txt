@@ -1,0 +1,983 @@
+==== VOLUME META ====
+generated_at: 2026-02-27T11:13:07.462628
+title: FOLDER: 50-operations
+root_dir: C:\MyCode\kOADigitalEcosystem\kOA_Digital_Ecosystem\docs
+file_count: 5
+total_size_mb: 0.0322
+home: 00_START_HERE.instructions.md
+prev_volume: docs_20260227_111307_04_10-system.txt
+next_volume: docs_20260227_111307_06_90-reference.txt
+prev_title: 10-system
+next_title: 90-reference
+short_title: 50-operations
+
+==== FILE_INDEX ====
+ENTRY id=4985080ab0e4 path="50-operations/incident-response.md" kind=markdown size=10407 lines=223 chunks=0
+ENTRY id=1e41ba7d6beb path="50-operations/key-management.md" kind=markdown size=5574 lines=151 chunks=0
+ENTRY id=acedebc41c62 path="50-operations/pipeline.md" kind=markdown size=5062 lines=171 chunks=0
+ENTRY id=a335324d501e path="50-operations/releases.md" kind=markdown size=3649 lines=108 chunks=0
+ENTRY id=c12c3ecc0e25 path="50-operations/rollback.md" kind=markdown size=9048 lines=259 chunks=0
+
+==== FILES ====
+
+----- FILE BEGIN -----
+path="50-operations/incident-response.md"
+id=4985080ab0e4
+kind=markdown
+size=10407
+lines=223
+chunks=0
+----
+# Incident Response
+
+**File:** `docs/50-operations/incident-response.md`  
+**Status:** Normative (kOA)  
+**External normative references:** Kristal v4 docs + schemas (pinned dependency)
+
+---
+
+## 1) Purpose
+
+Provide a deterministic, auditable procedure for detecting, triaging, mitigating, and resolving incidents across:
+- Orgo build pipeline (validation/compile/publish),
+- Konnaxion distribution/activation/rollback,
+- Architect rendering (trace/no-new-facts),
+- SwarmCraft execution (side effects + telemetry),
+- Trust roots / keys / revocations,
+- Multi-tenant isolation.
+
+This runbook avoids schema-level duplication. When you need artifact formats, follow the pinned Kristal references (integration section) or kOA-native schemas under `docs/30-artifacts/schemas/`.
+
+---
+
+## 2) Non-negotiable rules
+
+1. **Fail-closed on declared integrity:** if signatures/hashes are present and verification fails, do not bypass.
+2. **No canon mutation under incident pressure:** canon changes require governed work; do not “hot-edit” Exchange.
+3. **Prefer rollback over patching:** if activation/publish broke consumers, roll back to last-known-good and then fix forward.
+4. **Preserve evidence:** do not overwrite logs/artifacts; snapshot first.
+5. **Tenant isolation always:** no cross-tenant “quick fixes” (keys, packs, configs).
+
+---
+
+## 3) Roles and ownership
+
+- **Incident Commander (IC):** directs response, owns timeline, decisions, and comms.
+- **Operations Lead (Ops):** executes mitigations (rollbacks, holds, traffic shaping).
+- **Security Lead (Sec):** keys, trust roots, revocations, suspected tampering.
+- **Orgo Lead:** pipeline gates, build reproducibility, publish controls.
+- **Konnaxion Lead:** activation/rollback, channel integrity, cache layout.
+- **Architect Lead:** render determinism, trace coverage, template regressions.
+- **SwarmCraft Lead:** execution failures, telemetry integrity, side-effect safety.
+
+---
+
+## 4) Severity model
+
+- **SEV0:** active security compromise, cross-tenant breach, or widespread integrity bypass risk.
+- **SEV1:** system-wide outage or incorrect canon distribution (bad pack broadly activated).
+- **SEV2:** major degradation, partial outage, or correctness risk limited to a subset.
+- **SEV3:** minor degradation, localized issue, workaround exists.
+- **SEV4:** informational / no user impact.
+
+Escalate to **SEV0/SEV1** when:
+- signatures/hashes fail unexpectedly at scale,
+- downgrade/substitution attempts are detected,
+- trust roots/keys appear compromised,
+- cross-tenant mixing is suspected,
+- “no-new-facts” violations occur in regulated contexts.
+
+---
+
+## 5) Triage checklist (first 10 minutes)
+
+### 5.1 Stabilize
+- [ ] Assign IC + leads (Ops/Sec/Orgo/Konnaxion/Architect/SwarmCraft as needed).
+- [ ] Freeze risky automation (publishes, auto-activation, key rotation) if it could worsen impact.
+- [ ] Establish an incident channel + single source timeline.
+
+### 5.2 Identify scope
+- [ ] Which tenants/channels/environments are impacted?
+- [ ] Which stage is failing: build, publish, activation, render, execute?
+- [ ] Is this correctness, availability, or security?
+
+### 5.3 Preserve evidence (before any destructive action)
+Collect and snapshot:
+- Orgo build record + stage logs (validation/compile/publish)
+- Validation report(s) for failing builds
+- Runtime Pack Manifest + channel index (as received)
+- Activation record / local state from Konnaxion (active pack id, last-known-good, rejection reasons)
+- Render bundles + trace maps for affected outputs
+- SwarmCraft execution envelopes + telemetry for affected tasks
+- Trust root set used for verification (per channel) + revocation state
+
+---
+
+## 6) Containment and mitigation playbooks
+
+### 6.1 Bad release / bad pack activated
+**Goal:** stop spread and restore last-known-good deterministically.
+
+- [ ] Pause auto-activation for the affected channel(s).
+- [ ] Roll back to last-known-good pack (per channel) using Konnaxion rollback procedure.
+- [ ] Pin the channel to a known safe release (if your channel supports pinning).
+- [ ] Quarantine the offending release (mark as revoked/blocked in distribution controls).
+- [ ] Open a governed Orgo Case to fix forward.
+
+### 6.2 Verification failures (signature/hash mismatch)
+**Goal:** determine whether it is (a) packaging error, (b) wrong trust roots, (c) tampering.
+
+- [ ] Confirm which verification step failed (index signature vs manifest signature vs file hash).
+- [ ] Confirm the trust root set used for the channel is correct for the tenant/environment.
+- [ ] Re-fetch artifacts via a trusted path (if network is involved) to rule out transient corruption.
+- [ ] If mismatch persists:
+  - treat as **SEV0/SEV1** until proven benign,
+  - quarantine the artifact and suspect distribution integrity.
+- [ ] If the trust root set is wrong:
+  - fix by deploying corrected roots (tenant-scoped),
+  - do not “accept both” unless explicitly governed and audited.
+
+### 6.3 Schema validation failures (manifests / envelopes)
+**Goal:** determine whether the producer emitted non-conformant artifacts or the consumer is pinned to the wrong version.
+
+- [ ] Identify the schema version expected by the consumer.
+- [ ] Confirm the producer’s pinned dependency versions (Kristal v4 commit/tag).
+- [ ] If producer emitted non-conformant artifacts:
+  - block publish (Orgo gate),
+  - fix producer and regenerate artifacts.
+- [ ] If consumer is pinned incorrectly:
+  - roll back consumer deployment or adjust its pinned dependency,
+  - do not relax validation in production as an emergency bypass.
+
+### 6.4 Canon mismatch / reproducibility failure (same inputs, different IDs)
+**Goal:** locate the source of non-determinism.
+
+- [ ] Verify canonicalization settings are pinned and consistent across toolchains.
+- [ ] Verify inputs are identical (input snapshot refs, blueprint/config refs, policy refs).
+- [ ] Compare compilation environment metadata (compiler version, config hash, build constraints).
+- [ ] If any dependency is not pinned, treat as root cause and remediate by pinning.
+- [ ] Block publish until determinism is restored.
+
+### 6.5 Rendering correctness incident (no-new-facts / trace failures)
+**Goal:** prevent propagation of untraceable outputs.
+
+- [ ] Disable or gate the affected templates/models (render pipeline) for impacted tenants.
+- [ ] Switch to “safe rendering mode” (strict trace-required; omit if not traced).
+- [ ] Capture render bundle + trace map for examples and failing assertions.
+- [ ] If the issue is systematic:
+  - roll back template/model bundle,
+  - open a governed Orgo Case with reproduction steps and affected surfaces.
+
+### 6.6 Execution incident (side effects, runaway tasks, unsafe actions)
+**Goal:** stop harm, contain side effects, preserve audit.
+
+- [ ] Halt task dispatch for affected task types/queues.
+- [ ] Cancel or isolate running tasks if safe to do so (do not destroy evidence).
+- [ ] Capture task envelopes, runtime logs, telemetry, and any external side-effect audit logs.
+- [ ] Review mandate constraints (permissions, approvals, forbidden actions).
+- [ ] Resume only after the control-plane gates are corrected.
+
+### 6.7 Suspected security compromise (keys, trust roots, tampering, cross-tenant)
+**Goal:** contain and rotate without breaking invariants.
+
+- [ ] Treat as **SEV0**.
+- [ ] Freeze publish/activation for impacted channels.
+- [ ] Snapshot and lock down trust root stores, revocation sources, and signing infrastructure.
+- [ ] Rotate keys per tenant/environment as required; publish revocations through the governed mechanism.
+- [ ] Validate that no consumers accept the compromised keys post-rotation.
+- [ ] Perform cross-tenant audit: ensure no shared roots were incorrectly configured.
+
+---
+
+## 7) Communication requirements
+
+### 7.1 Internal updates (IC cadence)
+- SEV0/SEV1: every 15 minutes
+- SEV2: every 30 minutes
+- SEV3/SEV4: as needed
+
+Each update includes:
+- what changed since last update,
+- current impact/scope,
+- mitigation status (rollback/pause/quarantine),
+- next actions and owner.
+
+### 7.2 External updates (if applicable)
+Only publish externally when:
+- scope is confirmed,
+- a mitigation path exists,
+- you can state clear customer impact and next steps.
+
+Avoid speculation about root cause until verified.
+
+---
+
+## 8) Recovery and validation
+
+Before declaring resolved:
+- [ ] Impact has stopped (no new failures, no new incorrect outputs).
+- [ ] Stable state achieved (last-known-good active; gates re-enabled safely).
+- [ ] Verification checks pass end-to-end (publish → distribute → activate → render → execute).
+- [ ] Monitoring confirms recovery (error rates, activation rejects, render trace failures, task failures).
+- [ ] A governed Orgo Case exists for permanent fix (if not already created).
+
+---
+
+## 9) Post-incident requirements (within 24–72 hours)
+
+### 9.1 Postmortem packet (required)
+- Timeline (UTC)
+- Impact scope (tenants/channels)
+- Root cause analysis (technical + process)
+- What worked / what didn’t
+- Corrective actions (owners + deadlines)
+
+### 9.2 Corrective actions (typical)
+- Add/strengthen conformance tests (schemas, determinism checks, verification ordering).
+- Improve guardrails (publish holds, canary activation, stricter rollback criteria).
+- Update pinned dependencies and document them (Kristal v4 version pin).
+- If contract changes are needed:
+  - record a kOA ADR,
+  - update integration profile docs,
+  - never patch around contract divergence silently.
+
+---
+
+## 10) Quick reference: what to do first (by symptom)
+
+- **Activation failing across a channel** → pause auto-activation → rollback → inspect verification step
+- **New release causes crashes** → rollback → quarantine release → open fix-forward case
+- **Signature/hash mismatch** → quarantine → verify trust roots → treat as security until proven otherwise
+- **Schema validation errors** → block publish → confirm pinned versions → fix producer/consumer pinning
+- **Untraceable rendered facts** → safe rendering mode → roll back template/model → collect bundles
+- **Unsafe execution behavior** → halt dispatch → isolate tasks → capture telemetry → enforce mandate gates
+----- FILE END -----
+
+----- FILE BEGIN -----
+path="50-operations/key-management.md"
+id=1e41ba7d6beb
+kind=markdown
+size=5574
+lines=151
+chunks=0
+----
+# Key Management
+
+## Purpose
+
+Define how the kOA Digital Ecosystem manages cryptographic keys used for:
+- signing and verifying distribution artifacts (e.g., channel indexes, activation metadata),
+- authenticating internal services,
+- enforcing fail-closed activation and deterministic rollback.
+
+Kristal-owned artifact signing targets and signature field shapes are defined in the pinned Kristal v4 dependency. This document defines **kOA operational policy**: where keys live, how they rotate, how trust is anchored, and how verification gates behave.
+
+## Scope
+
+This doc covers:
+- key roles and trust boundaries
+- key storage and access control
+- rotation and revocation
+- verification policy at activation time
+- auditing and incident response tie-ins
+
+Not in scope:
+- Kristal schema definitions
+- exact signature object shapes for Kristal artifacts (refer to pinned Kristal v4)
+
+## Key roles
+
+### 1) Root trust (offline)
+- Purpose: anchor trust for distribution verification (e.g., signing intermediate keys).
+- Storage: offline HSM or equivalent.
+- Access: highly restricted; dual control recommended.
+
+### 2) Distribution signing keys (online)
+- Purpose: sign channel indexes or release metadata used by Konnaxion to decide what to fetch/activate.
+- Storage: online HSM / KMS.
+- Rotation: frequent compared to root (e.g., 30–180 days by policy).
+
+### 3) Service identity keys (online)
+- Purpose: authenticate kOA services (Orgo, Konnaxion, pipeline components).
+- Storage: workload identity platform or KMS-backed keys.
+- Rotation: automated.
+
+### 4) Developer/test keys (non-production)
+- Purpose: local development and CI test signing.
+- Storage: repository secrets / ephemeral CI secrets.
+- MUST NOT be trusted by production verification policy.
+
+## Key identifiers
+
+kOA MUST use stable key identifiers in operational metadata:
+- `key_id` (preferred terminology across the ecosystem)
+- key metadata includes algorithm family and usage constraints
+- key identifiers must be unique within the authority domain
+
+If an external ecosystem uses `kid`, treat it as an alias mapping to `key_id` in kOA operational tooling.
+
+## Trust store and verification policy
+
+### Trust store contents
+Konnaxion and verification services MUST maintain a trust store with:
+- trusted root(s)
+- allowed intermediate signer keys
+- key status (active, rotated, revoked)
+- validity windows and constraints
+
+### Fail-closed verification
+Activation and distribution decisions MUST be fail-closed:
+- unknown key → reject
+- revoked key → reject
+- signature missing when required → reject
+- signature invalid → reject
+- algorithm not allowed by policy → reject
+- key usage mismatch (wrong purpose) → reject
+
+### Deterministic rollback coupling
+If activation fails verification, the system MUST:
+- preserve the last-known-good active pack state
+- record a deterministic rollback decision (reason + evidence)
+- emit an operational event for Orgo
+
+## Rotation policy
+
+### Rotation requirements
+- Rotation MUST be planned and periodic for online keys.
+- Rotation MUST be supported without downtime.
+- Multiple valid keys MAY be accepted during an overlap window.
+
+### Overlap window (recommended)
+- Configure Konnaxion to accept signatures from:
+  - the “current” key
+  - the “previous” key
+during a short overlap to allow safe rollout.
+
+### Rotation procedure (high level)
+1. Generate new key under controlled environment.
+2. Publish the new key to the trust store with status `PENDING`.
+3. Sign next release metadata with both current and new key (if supported) or switch signing to new key.
+4. Promote new key to `ACTIVE` after verification in staging/limited cohort.
+5. Demote old key to `DEPRECATED` and then `RETIRED`.
+6. Update documentation and ADR if policy changes.
+
+## Revocation policy
+
+Revocation MUST be supported for:
+- key compromise
+- unauthorized signing
+- policy violation
+- cryptographic deprecation
+
+Revocation actions:
+- mark key `REVOKED` in trust store
+- push trust store update to all verifiers
+- block activation and downloads relying on revoked keys
+- trigger rollback if an active pack’s trust chain becomes invalid (policy decision)
+
+## Storage and access control
+
+- Production keys MUST be stored in an HSM/KMS or equivalent.
+- Keys MUST never be stored in plaintext on disk.
+- Private keys MUST be accessible only to the minimum set of signing services.
+- Signing services MUST authenticate to KMS with least privilege.
+- All key usage MUST be logged (who, when, what was signed).
+
+## Audit and observability
+
+kOA MUST record:
+- key creation events
+- key rotation events (old→new mapping)
+- signing events (artifact type, digest, signer key_id)
+- verification failures (deterministic error code + reason)
+- revocation events and propagation status
+
+These events should feed:
+- security monitoring
+- incident response runbooks
+- Orgo Cases/Tasks for remediation work
+
+## Incident response hooks
+
+Key compromise response SHOULD:
+1. Revoke compromised key(s).
+2. Freeze releases and distribution updates until trust restored.
+3. Roll back affected deployments (fail-closed).
+4. Create Orgo Case(s) for investigation and remediation.
+5. Rotate affected trust roots/intermediates as required.
+
+## Related docs
+
+- `docs/50-operations/rollback.md`
+- `docs/50-operations/releases.md`
+- `docs/40-integration/kristal-v4/conformance.md`
+- `docs/90-reference/adr/adr-0003-konnaxion-activation-rollback.md`
+----- FILE END -----
+
+----- FILE BEGIN -----
+path="50-operations/pipeline.md"
+id=acedebc41c62
+kind=markdown
+size=5062
+lines=171
+chunks=0
+----
+# Pipeline Operations (Orgo)
+
+**Scope:** Operational runbook for the kOA pipeline as orchestrated by **Orgo**.  
+**Non-goal:** This document does not restate Kristal artifact schemas. When a stage produces/consumes Kristal artifacts, it references them as opaque refs and points to `docs/40-integration/kristal-v4/contract-pointers.md`.
+
+---
+
+## 1) Stage spine (normative for kOA)
+
+Orgo enforces this ordered stage spine:
+
+1. **Ingest** → record `input_snapshots[]` (content-addressed refs)
+2. **Extract** → produce Claim-IR (Kristal artifact)
+3. **Resolve** → produce Resolved Claim-IR (Kristal artifact)
+4. **Validate** → produce Validation Report (Kristal artifact)
+5. **Compile** → produce Exchange + Runtime Pack (Kristal artifacts)
+6. **Distribute** → publish pack(s) to channels (kOA)
+7. **Activate** → verify + switch active pack (Konnaxion)
+8. **Observe** → metrics/events/logs (kOA)
+9. **Feedback** → cases/tasks (kOA)
+
+**Hard rule:** If the Validate stage fails, Orgo MUST stop and MUST NOT run Compile (“no compile on fail”).
+
+---
+
+## 2) Required operational records (kOA)
+
+For every pipeline execution, Orgo MUST persist a **Build Record**:
+
+- `docs/30-artifacts/build-record.md`
+
+For every promotion/publish action, Orgo MUST persist a **Release Record**:
+
+- `docs/30-artifacts/release-record.md`
+
+---
+
+## 3) Inputs (Ingest)
+
+### 3.1 What to verify at ingest
+- Inputs are stored immutably and referenced by content hash
+- Provenance recorded (source, timestamps, access controls)
+- Any confidentiality policy applied before downstream processing
+
+### 3.2 Failure handling
+- If an input cannot be content-addressed or provenance is incomplete: fail the build attempt
+- If access policy forbids use: exclude and record exclusion
+
+---
+
+## 4) Extract (Claim-IR)
+
+### 4.1 Operational checks
+- Extractor version is pinned and recorded
+- Output is schema-valid per Kristal v4 (see pointers doc)
+- Output is content-addressed and recorded
+
+### 4.2 Failure handling
+- If schema validation fails: stop build, record failure, open Orgo Case
+
+---
+
+## 5) Resolve (Resolved Claim-IR)
+
+### 5.1 Operational checks
+- Resolver version pinned and recorded
+- Output is schema-valid per Kristal v4
+- Ambiguity preserved; no silent coercion
+
+### 5.2 Failure handling
+- Stop build on schema invalid output
+- Record deterministic error codes for repeated failures
+
+---
+
+## 6) Validate (Validation Report) — the acceptance gate
+
+### 6.1 Operational checks
+- Validator version pinned and recorded
+- Report is schema-valid per Kristal v4
+- Gate decision recorded in Build Record
+
+### 6.2 Failure handling (hard)
+- On validation failure:
+  - Do **not** compile
+  - Persist the Validation Report ref
+  - Create an Orgo Case (triage) and attach the report
+
+---
+
+## 7) Compile (Exchange + Runtime Pack)
+
+### 7.1 Preconditions
+- Validation gate PASS
+- Pinned blueprint + mandate + policy selections recorded
+- Compiler version pinned and recorded
+
+### 7.2 Operational checks
+- Produced artifacts are schema-valid per Kristal v4
+- Manifest refs recorded
+- IDs/hashes/signatures verified at rest (spot-check or full verify per policy)
+
+### 7.3 Failure handling
+- If compile fails: record failure, do not distribute, open Orgo Case
+
+---
+
+## 8) Distribute (channels)
+
+### 8.1 Publish rules
+- Distribution is keyed by Release Record intent
+- Packs are immutable; publishing creates new version identifiers
+
+### 8.2 Failure handling
+- If publish fails mid-way: mark release as failed and do not advance cohorts
+
+---
+
+## 9) Activate (Konnaxion)
+
+### 9.1 Preconditions
+- Pack fetched successfully
+- Verification is **fail-closed**:
+  - signature verification
+  - hash verification
+  - compatibility policy check
+
+### 9.2 Activation rules
+- Atomic switch of active pack
+- Deterministic rollback to last-known-good on failure
+- Downgrade prevention per compatibility policy
+
+---
+
+## 10) Observability (minimum signals)
+
+### 10.1 Pipeline metrics
+- Stage durations
+- PASS/FAIL/SKIP counts
+- Validation failure codes
+- Compile failure codes
+
+### 10.2 Distribution metrics
+- Fetch success rate
+- Verify failures (by reason)
+- Activation/rollback events
+
+### 10.3 Audit linkage
+Every metric/event MUST reference:
+- `build_id` and/or `release_id`
+- associated artifact refs (where applicable)
+
+---
+
+## 11) Incident playbook triggers (examples)
+
+- Repeated validation failures for the same blueprint/policy set
+- Increase in activation verify failures
+- Increase in rollback events
+- Pack distribution channel drift (unexpected “latest”)
+
+---
+
+## 12) Operator checklist (quick)
+
+- Identify `build_id` / `release_id`
+- Retrieve Build/Release Records
+- Retrieve referenced Kristal artifacts (Validation Report, manifests)
+- Confirm gate outcomes and failure reasons
+- If activation incident: confirm rollback executed and downgrade prevention state
+- Create/attach Orgo Case and Tasks for remediation
+----- FILE END -----
+
+----- FILE BEGIN -----
+path="50-operations/releases.md"
+id=a335324d501e
+kind=markdown
+size=3649
+lines=108
+chunks=0
+----
+# Releases
+
+**Purpose:** Define how kOA turns a successful build into a controlled rollout, with verified distribution, activation, monitoring, and rollback.
+
+This page describes **kOA release operations**. It does not define Kristal artifact formats.
+
+## 1) Inputs to a release
+
+A release is initiated when Orgo has:
+
+* A **Build Record** (kOA-owned) for an eligible build
+* A validation outcome of **PASS**
+* References to Kristal-produced artifacts:
+
+  * Exchange reference (opaque)
+  * Runtime Pack reference (opaque)
+* A pinned **Mandate Bundle** (governance + policy)
+* A target rollout plan (channels/cohorts/regions)
+
+## 2) Release stages (operational)
+
+1. **Eligibility check**
+
+   * Build status is PASS
+   * Required approvals exist (per Mandate)
+   * Required artifact references exist
+   * Target channel is allowed
+
+2. **Candidate publication**
+
+   * Publish/announce the candidate Runtime Pack ref to the distribution store/channel tooling
+   * Record the release intent (Release Record)
+
+3. **Verification pre-check**
+
+   * Confirm the candidate pack can be fetched
+   * Confirm required signer keys are available and not revoked
+   * Confirm compatibility policy allows this pack for the target cohort
+
+4. **Rollout**
+
+   * Gradual cohort expansion (canary → partial → full), or pinned rollout
+   * Enforce “no silent jumps” (explicit cohort size changes)
+
+5. **Monitoring**
+
+   * Activation success rate
+   * Verification failure reasons
+   * Error budget / incident triggers
+
+6. **Promotion / pin**
+
+   * If metrics are healthy, promote to “latest” and/or pin
+   * Record final state in Release Record
+
+7. **Rollback (if triggered)**
+
+   * Deterministic selection of rollback target (pinned or last-known-good)
+   * Stop further rollout, revert cohorts, mark the candidate as rejected/revoked if needed
+
+## 3) Channels, cohorts, and pinning
+
+* **Channel:** logical lane (e.g., `canary`, `stable`, `lts`)
+* **Cohort:** subset of clients (region, tenant, app version, feature flag)
+* **Pinned:** clients must remain on a specific pack ID until explicitly changed
+
+Rules (typical):
+
+* Canary channel moves fastest, smallest cohorts
+* Stable channel requires stricter thresholds
+* LTS channel changes only with explicit approval and longer bake windows
+* Pinning overrides “latest” resolution
+
+## 4) Required invariants
+
+* **Fail-closed activation:** clients must not activate an unverified pack.
+* **Atomic switch:** activation is all-or-nothing.
+* **Deterministic rollback:** rollback target selection must be deterministic under the policy.
+* **No truth mutation:** releases change what pack is active, not canonical truth itself.
+* **Auditable intent:** every promotion, pin, and rollback is recorded.
+
+## 5) Rollback triggers (examples)
+
+* Activation success rate drops below threshold
+* Verification failures spike (e.g., signature mismatch, revoked signer)
+* Crash/error rates exceed SLO
+* Pack compatibility failures exceed threshold
+* Security advisory or key compromise event
+
+## 6) Operational records
+
+kOA should record:
+
+* **Release Record**: intent + current rollout state
+* Activation metrics snapshots (by cohort/channel)
+* Decisions: promote, pin, pause, rollback (with actor + reason)
+
+## 7) What to reference for Kristal specifics
+
+All field-level definitions for:
+
+* Exchange / Exchange Manifest
+* Runtime Pack / Runtime Pack Manifest
+* Canonicalization and signing
+
+are defined in the pinned Kristal v4 specification referenced in:
+
+* `docs/40-integration/kristal-v4/contract-pointers.md`
+----- FILE END -----
+
+----- FILE BEGIN -----
+path="50-operations/rollback.md"
+id=c12c3ecc0e25
+kind=markdown
+size=9048
+lines=259
+chunks=0
+----
+# Rollback
+
+**Normative for kOA:** YES
+**External normative reference:** Kristal v4 (pinned)
+
+This runbook defines how kOA rolls back deployments safely and deterministically. Kristal v4 defines artifact validity; rollback procedures reference Kristal artifacts only by **opaque IDs** and rely on **verification** at activation time.
+
+## Goals
+
+* Restore a **last-known-good (LKG)** runtime state per channel/environment.
+* Prevent partial or inconsistent activation across a rollout surface.
+* Preserve auditability: every rollback produces a **Release Record** update (or a dedicated rollback record) and an Orgo trail.
+
+## Definitions
+
+* **Channel:** a named deployment lane (e.g., `prod`, `staging`, `canary`, `eu-prod`).
+* **Target:** a concrete environment/cluster/edge group within a channel.
+* **Active Pack:** the currently serving Runtime Pack for a target.
+* **LKG Pack:** the most recent pack that was fully verified and healthy for the same target.
+* **Rollback:** switching Active Pack from current → LKG (or another explicitly selected prior pack).
+
+## Rollback types
+
+1. **Automatic rollback (activation-time)**
+
+   * Triggered when activation preflight fails or health checks fail during rollout.
+2. **Operator-initiated rollback**
+
+   * Triggered by incidents, regressions, policy/safety concerns, or customer impact.
+3. **Emergency rollback**
+
+   * Triggered by integrity compromise suspicion, unsafe behavior, or widespread outage.
+   * May include freezes and trust/allowlist changes.
+
+## Preconditions and safety gates
+
+Rollback MUST be blocked if any of the following are true:
+
+* No verified LKG pack exists for the target.
+* The rollback candidate pack is not available in the artifact store.
+* Activation preflight cannot run (e.g., verification subsystem down).
+* The target is in a state requiring manual intervention (e.g., corrupted runtime, missing dependency) and “safe mode” must be used.
+
+Rollback SHOULD be blocked (or require explicit override) if:
+
+* The rollback candidate is older than policy permits for the channel.
+* The rollback candidate is incompatible with the current runtime version.
+* The rollback would violate an active governance constraint (unless emergency procedures apply).
+
+## Inputs (required)
+
+* `channel`
+* `targets` (one or many)
+* `rollback_reason` (structured: incident ID, regression ID, policy trigger)
+* `rollback_mode` (automatic/operator/emergency)
+* `candidate_pack_id` (optional; if omitted, use LKG)
+* `release_record_id` (if rolling back a specific release)
+* `operator_id` (for operator/emergency)
+
+## Outputs (required)
+
+* Updated **Release Record** (or a new rollback entry) including:
+
+  * previous active pack ID
+  * new active pack ID
+  * scope (channel/targets)
+  * timestamps
+  * reason + authorizing entity
+* Konnaxion activation events:
+
+  * activation attempt IDs
+  * per-target outcomes
+* Orgo Tasks/Case updates (if operator initiated)
+
+## Default policy
+
+* Prefer **automatic rollback** on activation failure unless a channel explicitly disables it.
+* Prefer **LKG rollback** unless the operator explicitly chooses another prior pack.
+* Rollback is **idempotent**: repeating the same rollback request should not produce inconsistent state.
+
+## Procedure: operator-initiated rollback (standard)
+
+1. **Freeze promotions (channel)**
+
+   * Prevent new activations while rollback runs.
+   * If a release pipeline is mid-flight, halt at the next safe boundary.
+
+2. **Select candidate**
+
+   * If `candidate_pack_id` is not provided:
+
+     * choose **LKG** for each target (can differ by target if policy allows)
+   * If provided:
+
+     * confirm it is a previously deployed pack for the same channel family (unless override)
+
+3. **Preflight**
+
+   * For each target:
+
+     * verify candidate pack availability
+     * run activation preflight (integrity + compatibility + policy gates)
+     * confirm rollback will not strand dependent components (if runtime requires paired components)
+
+4. **Execute rollback**
+
+   * Perform activation to the candidate pack per target.
+   * Use the channel’s rollout policy:
+
+     * all-at-once (small surfaces)
+     * staged (clusters → regions → global)
+     * canary-first (recommended)
+   * Enforce “no partial completion” unless explicitly configured:
+
+     * if any stage fails, stop and proceed to “rollback of rollback” decision.
+
+5. **Post-check**
+
+   * Validate health and correctness signals:
+
+     * runtime health checks
+     * key business metrics
+     * safety/policy guard telemetry
+   * Confirm the active pack ID matches expected on all targets.
+
+6. **Record and unfreeze**
+
+   * Update Release Record / rollback entry.
+   * Close/advance the Orgo Task.
+   * Unfreeze promotions only after:
+
+     * stability window criteria met (channel-defined), or
+     * operator override with documented reason.
+
+## Procedure: automatic rollback (activation-time)
+
+Automatic rollback is triggered when rollout detects:
+
+* activation preflight failure
+* post-activation health check failure
+* policy enforcement failure (channel-defined)
+
+Steps:
+
+1. Stop further rollout in the same stage.
+2. Attempt rollback to the last-known-good pack for the failing target(s).
+3. If rollback succeeds:
+
+   * mark rollout as failed and require human approval to proceed.
+4. If rollback fails:
+
+   * escalate to emergency procedure.
+   * place targets in safe mode if supported.
+
+## Procedure: emergency rollback
+
+Use when there is strong evidence of integrity compromise, unsafe behavior, or fast-spreading outage.
+
+1. **Immediate freeze**
+
+   * Freeze promotions and activations for the entire channel (or all channels if global).
+
+2. **Scope containment**
+
+   * Identify impacted targets and expand scope conservatively if uncertain.
+
+3. **Rollback to LKG**
+
+   * Execute rollback with priority on restoring safe operation.
+   * If LKG is unavailable or fails preflight, select the most recent prior verified pack that passes preflight.
+
+4. **If rollback cannot restore safety**
+
+   * Enter **safe mode**:
+
+     * deny/disable unsafe capabilities
+     * serve minimal safe responses
+     * disable optional modules that may be triggering failures
+   * Keep service alive only if safe mode is explicitly approved for that channel.
+
+5. **Trust response (if integrity concern)**
+
+   * Rotate or revoke trust material as required by policy.
+   * Require conformance re-verification before any new promotion.
+
+6. **Audit + incident**
+
+   * Open/attach an incident.
+   * Record all decisions and activation events in Release Record + Orgo.
+
+## Decision guide
+
+Rollback is the correct action if:
+
+* A newly activated pack causes elevated errors, regressions, or unsafe outcomes.
+* Policy enforcement is not functioning as expected.
+* Determinism or verification guarantees are in question.
+* Activation is partially complete and must be normalized quickly.
+
+Do not rollback (or rollback only after containment) if:
+
+* The issue is purely upstream (inputs) and the active pack is not implicated.
+* The issue is confined to a single target with environmental failure (prefer repair).
+* The rollback candidate is known-bad for the same failure class.
+
+## Rollback failure handling
+
+If rollback activation fails on any target:
+
+* Stop further actions for that stage.
+* Attempt rollback to an earlier candidate (prior LKG) if policy allows.
+* If no candidate passes preflight:
+
+  * place target into safe mode (if supported)
+  * escalate to incident response
+  * require manual remediation
+
+## Observability requirements
+
+During rollback, the system must emit:
+
+* per-target activation attempt events
+* preflight outcomes (pass/fail + reason codes)
+* post-activation health results
+* the final active pack ID per target
+
+Dashboards/alerts should include:
+
+* rollback success rate by channel and environment
+* time-to-restore by incident
+* repeated rollback loops (flapping)
+* divergence: reported active pack ID vs expected
+
+## Operational hygiene
+
+* Maintain at least **N prior verified packs** per channel (policy-defined) to ensure rollback availability.
+* Periodically perform **rollback drills** in non-prod and canary channels.
+* Treat frequent rollbacks as a signal:
+
+  * investigate pipeline quality, conformance tests, and gating strictness.
+* Ensure rollback tooling is compatible across runtime versions (backward compatibility plan).
+
+## Orgo integration
+
+Operator-initiated and emergency rollbacks must be expressed as:
+
+* an Orgo Case (incident/regression)
+* one or more Orgo Tasks:
+
+  * `freeze-promotions`
+  * `rollback-activation`
+  * `post-rollback-validation`
+  * `unfreeze-promotions` (optional gated task)
+
+Rollback tasks must reference:
+
+* channel/targets
+* candidate selection rule or explicit candidate IDs
+* required validations and success criteria
+----- FILE END -----

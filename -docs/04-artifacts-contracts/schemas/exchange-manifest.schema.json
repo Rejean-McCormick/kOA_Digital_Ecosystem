@@ -1,0 +1,322 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/exchange-manifest.schema.json",
+  "title": "Kristal Exchange Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version",
+    "exchange_id",
+    "exchange_hash",
+    "hash_algorithm",
+    "created_at",
+    "produced_by",
+    "blueprint",
+    "policy",
+    "pipeline_refs",
+    "inputs",
+    "signatures"
+  ],
+  "properties": {
+    "manifest_version": {
+      "type": "string",
+      "description": "Schema/manifest version for this manifest object.",
+      "pattern": "^v[0-9]+(\\.[0-9]+){0,2}$",
+      "examples": ["v1", "v1.0", "v1.1.0"]
+    },
+
+    "exchange_id": {
+      "type": "string",
+      "description": "Stable identifier for the Exchange artifact. Recommended: content-addressed form.",
+      "minLength": 8,
+      "examples": ["kristal:exchange:sha256:0123456789abcdef..."]
+    },
+
+    "exchange_hash": {
+      "type": "string",
+      "description": "Content hash of the Kristal Exchange payload (canonical serialization).",
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+
+    "hash_algorithm": {
+      "type": "string",
+      "description": "Hash algorithm used for exchange_hash and content-addressed refs.",
+      "enum": ["sha256"]
+    },
+
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Manifest creation timestamp (UTC ISO-8601)."
+    },
+
+    "produced_by": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component", "version"],
+      "properties": {
+        "component": {
+          "type": "string",
+          "description": "Producer component name.",
+          "examples": ["Kristal", "Orgo"]
+        },
+        "version": {
+          "type": "string",
+          "description": "Producer semantic version or build version.",
+          "minLength": 1
+        },
+        "instance_id": {
+          "type": "string",
+          "description": "Optional runtime instance identifier (for observability)."
+        },
+        "build_id": {
+          "type": "string",
+          "description": "Optional CI/build identifier."
+        }
+      }
+    },
+
+    "blueprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["blueprint_hash"],
+      "properties": {
+        "blueprint_id": {
+          "type": "string",
+          "description": "Optional stable identifier for the Blueprint bundle."
+        },
+        "blueprint_version": {
+          "type": "string",
+          "description": "Optional semantic version for Blueprint bundle."
+        },
+        "blueprint_hash": {
+          "type": "string",
+          "description": "Hash of the Blueprint bundle (schemas/ontology/policies/module activation).",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        }
+      }
+    },
+
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy_id"],
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "description": "Identifier for the active policy selection set used for validation and compilation."
+        },
+        "profile": {
+          "type": "string",
+          "description": "Optional named profile (e.g., core/strict/tenant profile)."
+        },
+        "determinism_mode": {
+          "type": "string",
+          "description": "Optional explicit determinism mode declared for this build.",
+          "enum": ["strict", "best_effort"],
+          "default": "strict"
+        }
+      }
+    },
+
+    "governance": {
+      "type": "object",
+      "description": "Optional control-plane linkage for audit trails.",
+      "additionalProperties": false,
+      "properties": {
+        "orgo_build_id": { "type": "string" },
+        "orgo_case_id": { "type": "string", "format": "uuid" },
+        "orgo_task_id": { "type": "string", "format": "uuid" },
+        "tenant_id": { "type": "string" },
+        "organization_id": { "type": "string", "format": "uuid" }
+      }
+    },
+
+    "pipeline_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claim_ir", "resolved_claim_ir", "validation_report"],
+      "properties": {
+        "claim_ir": { "$ref": "#/$defs/ContentRef" },
+        "resolved_claim_ir": { "$ref": "#/$defs/ContentRef" },
+        "validation_report": { "$ref": "#/$defs/ContentRef" }
+      }
+    },
+
+    "inputs": {
+      "type": "array",
+      "description": "Immutable source snapshots and any other upstream inputs used for this build.",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/InputRef" }
+    },
+
+    "exchange_format": {
+      "type": "object",
+      "description": "Optional descriptive metadata about the Exchange payload encoding.",
+      "additionalProperties": false,
+      "properties": {
+        "format_id": {
+          "type": "string",
+          "examples": ["kristal-exchange.v1"]
+        },
+        "canonical_serialization": {
+          "type": "string",
+          "description": "Canonical serialization used for hashing/verifying.",
+          "examples": ["json", "jsonl", "cbor", "msgpack"]
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+
+    "determinism": {
+      "type": "object",
+      "description": "Optional explicit determinism declarations.",
+      "additionalProperties": false,
+      "properties": {
+        "canonical_ordering": { "type": "boolean", "default": true },
+        "canonical_whitespace": { "type": "boolean", "default": true },
+        "stable_ids": { "type": "boolean", "default": true }
+      }
+    },
+
+    "compatibility": {
+      "type": "object",
+      "description": "Optional reader/writer compatibility bounds for the Exchange payload.",
+      "additionalProperties": false,
+      "properties": {
+        "min_reader_version": { "type": "string" },
+        "max_reader_version": { "type": "string" }
+      }
+    },
+
+    "signatures": {
+      "type": "array",
+      "description": "One or more signatures over the manifest and/or the Exchange payload hash.",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/Signature" }
+    },
+
+    "notes": {
+      "type": "string",
+      "description": "Optional human notes; must not affect hashing of the Exchange payload.",
+      "maxLength": 16384
+    }
+  },
+
+  "$defs": {
+    "ContentRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref_type", "ref", "hash", "hash_algorithm"],
+      "properties": {
+        "ref_type": {
+          "type": "string",
+          "description": "How the reference should be interpreted.",
+          "enum": ["content_addressed", "uri", "registry"]
+        },
+        "ref": {
+          "type": "string",
+          "description": "Reference value (e.g., kristal:..., sha256:..., or URI).",
+          "minLength": 1
+        },
+        "hash": {
+          "type": "string",
+          "description": "Hash of the referenced content (canonical serialization).",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "hash_algorithm": {
+          "type": "string",
+          "enum": ["sha256"]
+        },
+        "byte_size": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+
+    "InputRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "source", "snapshot_ref"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "Logical input kind.",
+          "examples": ["document", "dataset", "feed", "upload", "api_snapshot"]
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source_type"],
+          "properties": {
+            "source_type": {
+              "type": "string",
+              "examples": ["email", "web", "drive", "api", "manual"]
+            },
+            "source_id": {
+              "type": "string",
+              "description": "Optional stable source identifier (connector-specific)."
+            },
+            "provenance": {
+              "type": "object",
+              "description": "Optional provenance fields; free-form but must be stable when present.",
+              "additionalProperties": true
+            }
+          }
+        },
+        "snapshot_ref": { "$ref": "#/$defs/ContentRef" }
+      }
+    },
+
+    "Signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key_id", "algorithm", "signature", "signed_at", "subject"],
+      "properties": {
+        "key_id": {
+          "type": "string",
+          "description": "Key identifier (KMS key ARN, DID key id, or registry key id)."
+        },
+        "algorithm": {
+          "type": "string",
+          "description": "Signature algorithm.",
+          "examples": ["ed25519", "rsa-pss-sha256", "ecdsa-p256-sha256"]
+        },
+        "signature": {
+          "type": "string",
+          "description": "Signature bytes encoded as base64.",
+          "contentEncoding": "base64"
+        },
+        "signed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "subject": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "hash", "hash_algorithm"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["exchange_hash", "manifest", "manifest+exchange_hash"],
+              "description": "What was signed."
+            },
+            "hash": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{64}$",
+              "description": "Hash of the signed subject (or the signed exchange hash)."
+            },
+            "hash_algorithm": {
+              "type": "string",
+              "enum": ["sha256"]
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,123 @@
+flowchart TD
+  %% Lifecycle (canonical pipeline)
+
+  subgraph KTR[Keter — Mandate]
+    KTR1[Mandate / Purpose / Scope]
+  end
+
+  subgraph CHK[Chokmah — Inputs]
+    CHK1[Raw Sources]
+    CHK2[Input Snapshots + Provenance]
+  end
+
+  subgraph BNH[Binah — Blueprint]
+    BNH1[Schemas / Ontologies / Policies]
+    BNH2[Build Configuration]
+  end
+
+  subgraph ORG[Orgo — Control Plane]
+    ORG1[Case / Task Intake]
+    ORG2[Stage Orchestration + Build Record]
+  end
+
+  subgraph EXT[Extractors]
+    EXT1[Extraction]
+    EXT2[Claim-IR Batch]
+  end
+
+  subgraph SNT[SenTient — Resolution]
+    SNT1[Resolve / Synthesize]
+    SNT2[Resolved Claim-IR Batch]
+  end
+
+  subgraph VAL[Validation Gate]
+    VAL1[Deterministic Validation]
+    VALP{Pass?}
+    VALR[Validation Report]
+  end
+
+  subgraph KRS[Da’at — Kristal]
+    KRS1[Compile]
+    KRS2[Kristal Exchange (Canonical Truth)]
+    KRS3[Runtime Pack (Derived, Offline)]
+  end
+
+  subgraph KON[Chesed — Konnaxion]
+    KON1[Fetch Pack / Channel Index]
+    KON2[Verify (Fail-Closed)]
+    KON3[Atomic Activation]
+    KON4[Rollback (Pinned / LKG)]
+  end
+
+  subgraph ARS[Netzach — Architect-Strategy]
+    ARS1[Plan / Decompose]
+    ARS2[Plan Envelope → Cases/Tasks]
+  end
+
+  subgraph ARR[Hod — Architect-Render]
+    ARR1[Deterministic Render]
+    ARR2[Render Bundle + trace_map]
+  end
+
+  subgraph SWM[Yesod — SwarmCraft]
+    SWM1[Execute Tasks]
+    SWM2[Telemetry / Logs]
+  end
+
+  subgraph EKO[Malkuth — EkoH Ledger]
+    EKO1[Trust / Expertise / Ethics / Voting]
+    EKO2[Impact + Audit Trail]
+  end
+
+  %% Main flow
+  KTR1 --> CHK1
+  CHK1 --> CHK2
+  KTR1 --> BNH1
+  BNH1 --> BNH2
+
+  CHK2 --> ORG2
+  BNH2 --> ORG2
+  ORG1 --> ORG2
+
+  ORG2 --> EXT1
+  EXT1 --> EXT2
+  EXT2 --> SNT1
+  SNT1 --> SNT2
+  SNT2 --> VAL1
+  VAL1 --> VALR
+  VAL1 --> VALP
+
+  %% Gate semantics
+  VALP -- "no" --> ORG1
+  VALP -- "yes" --> KRS1
+
+  %% Compile outputs
+  KRS1 --> KRS2
+  KRS1 --> KRS3
+
+  %% Distribution + activation
+  KRS3 --> KON1
+  KON1 --> KON2
+  KON2 -- "verify fail" --> KON4
+  KON2 -- "verify ok" --> KON3
+
+  %% Consumption paths
+  KRS2 --> ARS1
+  ARS1 --> ARS2
+  ARS2 --> ORG1
+
+  KRS2 --> ARR1
+  KON3 --> ARR1
+  ARR1 --> ARR2
+  ARR2 --> KON1
+
+  %% Execution loop
+  ORG2 --> SWM1
+  SWM1 --> SWM2
+  SWM2 --> ORG2
+
+  %% Ledger + feedback
+  SWM2 --> EKO1
+  KON3 --> EKO1
+  EKO1 --> EKO2
+  EKO2 --> ORG1

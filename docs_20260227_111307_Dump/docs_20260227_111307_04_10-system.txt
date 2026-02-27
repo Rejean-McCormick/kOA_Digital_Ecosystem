@@ -1,0 +1,1229 @@
+==== VOLUME META ====
+generated_at: 2026-02-27T11:13:07.453274
+title: FOLDER: 10-system
+root_dir: C:\MyCode\kOADigitalEcosystem\kOA_Digital_Ecosystem\docs
+file_count: 6
+total_size_mb: 0.0424
+home: 00_START_HERE.instructions.md
+prev_volume: docs_20260227_111307_03_30-artifacts.txt
+next_volume: docs_20260227_111307_05_50-operations.txt
+prev_title: 30-artifacts
+next_title: 50-operations
+short_title: 10-system
+
+==== FILE_INDEX ====
+ENTRY id=056b45750353 path="10-system/architecture.md" kind=markdown size=6000 lines=131 chunks=0
+ENTRY id=a55d0803f94a path="10-system/components.md" kind=markdown size=9142 lines=178 chunks=0
+ENTRY id=dee754a2ce5d path="10-system/determinism.md" kind=markdown size=6873 lines=128 chunks=0
+ENTRY id=df3fc4d62600 path="10-system/failure-modes.md" kind=markdown size=8008 lines=232 chunks=0
+ENTRY id=635b80f2993c path="10-system/lifecycle.md" kind=markdown size=8835 lines=342 chunks=0
+ENTRY id=19f8041b9554 path="10-system/trust-boundaries.md" kind=markdown size=5589 lines=136 chunks=0
+
+==== FILES ====
+
+----- FILE BEGIN -----
+path="10-system/architecture.md"
+id=056b45750353
+kind=markdown
+size=6000
+lines=131
+chunks=0
+----
+# Architecture
+
+**File:** `docs/10-system/architecture.md`  
+**Status:** Normative for kOA (system architecture), **non-normative** for Kristal artifact formats/schemas (external). :contentReference[oaicite:0]{index=0}
+
+---
+
+## 1) Purpose
+
+Define the kOA ecosystem architecture as a **contract-driven pipeline** that turns raw inputs into **canonical knowledge artifacts** (via Kristal) and then distributes, renders, operationalizes, and governs them safely. :contentReference[oaicite:1]{index=1}
+
+This document describes:
+- the major components (nodes) and their boundaries,
+- the control-plane vs data-plane split,
+- the stage spine (lifecycle),
+- cross-cutting properties (determinism, fail-closed verification, auditability, offline behavior).
+
+It does **not** redefine Kristal schemas or artifact formats; those are external normative sources. :contentReference[oaicite:2]{index=2}
+
+---
+
+## 2) Scope and non-goals
+
+### In scope
+- kOA nodes and responsibilities
+- Stage ordering and gates (architectural, not schema-level)
+- Operational flow and failure containment
+- Where Kristal artifacts enter/exit kOA boundaries
+
+### Out of scope (by design)
+- Field-level schemas for Kristal artifacts (Claim-IR, Exchange, Runtime Pack, Validation Report, etc.)
+- Canonicalization/signature/hashing mechanics beyond “what is required at boundaries”
+- Full deployment topology details (documented in ops)
+
+---
+
+## 3) System at a glance
+
+kOA is a governed ecosystem organized around one rule: **contracts and invariants define truth**. :contentReference[oaicite:3]{index=3}
+
+High-level flow:
+1. Ingest inputs → snapshot provenance
+2. Extract → Claim-IR
+3. Resolve → Resolved Claim-IR
+4. Validate (deterministic) → Validation Report
+5. Compile → Kristal Exchange + Runtime Pack
+6. Distribute → verify/activate/rollback
+7. Render → deterministic output + trace map
+8. Execute → tasks + telemetry
+9. Feedback → new governed work :contentReference[oaicite:4]{index=4}
+
+---
+
+## 4) Primary nodes (components)
+
+### 4.1 Control plane (governance + orchestration)
+- **Orgo**: workflow controller; enforces stage ordering, gating, audit records, and publication rules. :contentReference[oaicite:5]{index=5}
+
+### 4.2 Knowledge compilation (truth substrate)
+- **Kristal**: compiles validated knowledge into canonical Exchange and derived Runtime Packs. Kristal is the **truth pivot** inside the ecosystem. 
+- **SenTient**: reconciliation/resolution engine producing Resolved Claim-IR from Claim-IR, preserving ambiguity explicitly. :contentReference[oaicite:7]{index=7}
+
+### 4.3 Distribution + runtime
+- **Konnaxion (distribution facet)**: verifies, activates, and rolls back Runtime Packs **fail-closed**, with atomic activation and deterministic rollback. 
+
+### 4.4 Rendering (human-facing outputs)
+- **Architect-Render**: deterministic generation **after** validation; must not introduce new facts and must provide traceability coverage (Render Bundle + trace map) per the integration contract. 
+
+### 4.5 Optional execution (work output)
+- **SwarmCraft**: executes governed tasks and emits telemetry; does not mutate canonical truth directly. 
+
+---
+
+## 5) Boundary contracts (what crosses interfaces)
+
+kOA boundaries exchange **typed artifacts**, not implicit state. :contentReference[oaicite:11]{index=11}
+
+At a minimum, the pipeline carries:
+- Input snapshots (provenance-pinned)
+- Claim-IR (proposal boundary)
+- Resolved Claim-IR (resolution boundary)
+- Validation Report (deterministic acceptance evidence)
+- Kristal Exchange (canonical truth)
+- Runtime Pack (offline query payload)
+- Render Bundle (deterministic user-facing output + trace map)
+- Orgo Cases/Tasks and operational records (kOA-native) 
+
+**Normative note:** Kristal artifact schemas are owned externally; kOA should reference the pinned Kristal version rather than duplicating schema definitions. :contentReference[oaicite:13]{index=13}
+
+---
+
+## 6) Stage spine and gate semantics (architecture-level)
+
+### 6.1 Mandatory stage ordering
+Orgo enforces this order:
+**Ingest → Extract → Resolve → Validate → Compile Exchange → Compile Runtime Pack → Publish/Distribute**. :contentReference[oaicite:14]{index=14}
+
+### 6.2 Hard gates (fail-closed)
+- If validation fails, Orgo must not compile Exchange or Runtime Pack (“no compile on fail”). 
+- If distribution verification fails (hashes/signatures/compat), activation must not proceed. 
+
+### 6.3 Immutability and governed change
+- Canonical truth artifacts are immutable once published; changes produce new versions (no in-place mutation). 
+- Feedback creates new governed work (Cases/Tasks) and can trigger new builds, not direct mutation. 
+
+---
+
+## 7) Cross-cutting properties
+
+### 7.1 Determinism
+Determinism is enforced by pinned inputs, pinned policies/config, and deterministic gates. kOA documents determinism as a system invariant; Kristal defines canonicalization and identity mechanics externally. 
+
+### 7.2 Auditability
+Every stage output must be traceable via Orgo records and artifact references, enabling reproducibility and investigation. 
+
+### 7.3 Offline-first distribution
+Runtime Packs are designed for offline execution; Konnaxion operationalizes offline verification/activation/rollback. 
+
+### 7.4 Multi-tenancy and trust boundaries
+Tenant-scoped policies and trust roots must be enforced at verification and publication boundaries (documented in security/ops; Kristal supplies authority/trust schema structures externally). 
+
+---
+
+## 8) Where to go next
+
+- Lifecycle: `docs/10-system/lifecycle.md`
+- Components map: `docs/10-system/components.md`
+- Trust boundaries: `docs/10-system/trust-boundaries.md`
+- Determinism: `docs/10-system/determinism.md`
+- Node specs: `docs/20-nodes/`
+- Kristal integration (pinned references + kOA profile): `docs/40-integration/kristal-v4/` :contentReference[oaicite:23]{index=23}
+----- FILE END -----
+
+----- FILE BEGIN -----
+path="10-system/components.md"
+id=a55d0803f94a
+kind=markdown
+size=9142
+lines=178
+chunks=0
+----
+# Components
+
+**File:** `docs/10-system/components.md`  
+**Status:** Descriptive (system map; detailed contracts live elsewhere) :contentReference[oaicite:0]{index=0}  
+**Purpose:** Map the ecosystem’s components, responsibilities, and interfaces—without re-defining node specs or artifact schemas. :contentReference[oaicite:1]{index=1}
+
+---
+
+## 1) Planes (system at a glance)
+
+- **Control Plane:** Orgo (governance + workflow orchestration + audit) :contentReference[oaicite:2]{index=2}  
+- **Truth Plane (Canonical):** Kristal (Exchange + Runtime Pack; IDs, hashing, signatures; query contract) :contentReference[oaicite:3]{index=3}  
+- **Resolution Plane:** SenTient (reconciliation / normalization / ambiguity structures) :contentReference[oaicite:4]{index=4}  
+- **Articulation Plane:** Architect (Strategy + Render; deterministic outputs; trace) :contentReference[oaicite:5]{index=5}  
+- **Execution Plane:** SwarmCraft (tool/agent/human execution; telemetry) :contentReference[oaicite:6]{index=6}  
+- **Distribution + Interface Plane:** Konnaxion (pack distribution, verification, caching, activation/rollback; user-facing navigation) :contentReference[oaicite:7]{index=7}  
+- **Trust + Impact Plane:** EkoH (reputation/ethics, votes, impact ledger; never mutates canonical truth) :contentReference[oaicite:8]{index=8}  
+
+---
+
+## 2) Component responsibilities and interfaces
+
+### 2.1 Orgo (Control Plane)
+
+**Owns**
+- Workflow ordering and gating (ingest → Claim-IR → resolution → validation → compile → publish) :contentReference[oaicite:9]{index=9}  
+- Governance: approvals, policies, tenant boundaries, audit logging :contentReference[oaicite:10]{index=10}  
+- Build records: inputs, config hashes, policy selections, outputs (content-addressed IDs) :contentReference[oaicite:11]{index=11}  
+- Distribution triggers and distribution status tracking :contentReference[oaicite:12]{index=12}  
+
+**Does not own**
+- Canon mutation from feedback :contentReference[oaicite:13]{index=13}  
+- Resolution internals :contentReference[oaicite:14]{index=14}  
+- Rendering internals :contentReference[oaicite:15]{index=15}  
+
+**Interfaces**
+- Ingest adapters (sources → snapshots) :contentReference[oaicite:16]{index=16}  
+- Extractors (snapshots → Claim-IR) :contentReference[oaicite:17]{index=17}  
+- SenTient (Claim-IR → Resolved Claim-IR) :contentReference[oaicite:18]{index=18}  
+- Validation engine (Resolved Claim-IR → Validation Report) :contentReference[oaicite:19]{index=19}  
+- Kristal compiler (validated inputs → Exchange + Runtime Pack) :contentReference[oaicite:20]{index=20}  
+- Konnaxion (publish/activate packs; telemetry back) :contentReference[oaicite:21]{index=21}  
+
+---
+
+### 2.2 Kristal (Truth Plane / Canon)
+
+**Owns**
+- Canonical truth representation (Exchange) :contentReference[oaicite:22]{index=22}  
+- Offline execution representation (Runtime Pack) :contentReference[oaicite:23]{index=23}  
+- Canonicalization + hashing rules, signatures/trust roots :contentReference[oaicite:24]{index=24}  
+- Profiles/exports and query contract (portable semantics) :contentReference[oaicite:25]{index=25}  
+
+**Does not own**
+- Workflow governance (Orgo) :contentReference[oaicite:26]{index=26}  
+- UI presentation (Konnaxion) :contentReference[oaicite:27]{index=27}  
+- Non-deterministic invention :contentReference[oaicite:28]{index=28}  
+
+**Interfaces**
+- Compiler API (inputs → Exchange/Pack + manifests) :contentReference[oaicite:29]{index=29}  
+- Verification API (hash/signature verification) :contentReference[oaicite:30]{index=30}  
+- Query API (portable query semantics over Exchange/Pack) :contentReference[oaicite:31]{index=31}  
+- Integration contracts for Orgo / SenTient / Architect / Konnaxion :contentReference[oaicite:32]{index=32}  
+
+---
+
+### 2.3 SenTient (Resolution Plane)
+
+**Owns**
+- Deterministic resolution boundary (candidate IDs QIDs/PIDs, normalized literals, explicit ambiguity objects, structured warnings/errors) :contentReference[oaicite:33]{index=33}  
+- Schema-valid, reproducible Resolved Claim-IR output :contentReference[oaicite:34]{index=34}  
+
+**Does not own**
+- Canon compilation :contentReference[oaicite:35]{index=35}  
+- Validation acceptance policy :contentReference[oaicite:36]{index=36}  
+- Direct publication :contentReference[oaicite:37]{index=37}  
+
+**Interfaces**
+- Input: Claim-IR batches (+ optional context) :contentReference[oaicite:38]{index=38}  
+- Output: Resolved Claim-IR + warnings/errors :contentReference[oaicite:39]{index=39}  
+- Optional: provenance attachments for audit :contentReference[oaicite:40]{index=40}  
+
+---
+
+### 2.4 Validation Engine (Acceptance Gate)
+
+**Owns**
+- Deterministic acceptance decision (“no compile on fail”) :contentReference[oaicite:41]{index=41}  
+- Validation report artifacts (machine-readable pass/fail + reasons) :contentReference[oaicite:42]{index=42}  
+
+**Interfaces**
+- Input: Resolved Claim-IR + policy selections :contentReference[oaicite:43]{index=43}  
+- Output: Validation Report :contentReference[oaicite:44]{index=44}  
+
+---
+
+### 2.5 Architect (Articulation Plane)
+
+Architect is explicitly split into two roles. :contentReference[oaicite:45]{index=45}  
+
+#### 2.5.1 Architect-Strategy
+**Owns**
+- Planning and decomposition of objectives into structured work (Cases/Tasks) :contentReference[oaicite:46]{index=46}  
+- Selection of rendering specs/templates (but not editorial invention of facts) :contentReference[oaicite:47]{index=47}  
+
+**Interfaces**
+- Input: Mandate + user goal + available canon/pack index :contentReference[oaicite:48]{index=48}  
+- Output: Plans → Orgo Cases/Tasks; Rendering Specs :contentReference[oaicite:49]{index=49}  
+
+#### 2.5.2 Architect-Render
+**Owns**
+- Deterministic rendering from validated knowledge only :contentReference[oaicite:50]{index=50}  
+- Output packaging (Render Bundle: content + trace map + metadata) :contentReference[oaicite:51]{index=51}  
+- Refusal/error behavior when trace coverage is incomplete :contentReference[oaicite:52]{index=52}  
+
+**Interfaces**
+- Input: Runtime Pack query results OR Exchange-derived verified query results + Rendering Spec :contentReference[oaicite:53]{index=53}  
+- Output: Render Bundle (text/other outputs + trace map) :contentReference[oaicite:54]{index=54}  
+
+---
+
+### 2.6 SwarmCraft (Execution Plane)
+
+**Owns**
+- Execution of typed work (tasks) via tools/agents/humans :contentReference[oaicite:55]{index=55}  
+- Telemetry emission (status, logs, correlation IDs, outputs) :contentReference[oaicite:56]{index=56}  
+- Retry and resilience at execution level (not truth mutation) :contentReference[oaicite:57]{index=57}  
+
+**Does not own**
+- Canon creation :contentReference[oaicite:58]{index=58}  
+- UI distribution :contentReference[oaicite:59]{index=59}  
+
+**Interfaces**
+- Input: Orgo Tasks (typed, scoped, policy-aware) :contentReference[oaicite:60]{index=60}  
+- Output: execution results + telemetry signals (which may open new governed work) :contentReference[oaicite:61]{index=61}  
+
+---
+
+### 2.7 Konnaxion (Distribution + Interface Plane)
+
+Konnaxion is treated as two facets. :contentReference[oaicite:62]{index=62}  
+
+#### 2.7.1 Distribution facet (Runtime Packs)
+
+**Owns**
+- Pack distribution (channels/tenants/environments) :contentReference[oaicite:63]{index=63}  
+- Integrity verification (fail-closed where declared) :contentReference[oaicite:64]{index=64}  
+- Caching/storage layout, activation, rollback/downgrade behavior :contentReference[oaicite:65]{index=65}  
+- Surfacing pack provenance/version metadata to higher layers :contentReference[oaicite:66]{index=66}  
+
+**Interfaces**
+- Input: Published Runtime Packs + manifests + trust roots/keys :contentReference[oaicite:67]{index=67}  
+- Output: Activated pack set + activation state + telemetry :contentReference[oaicite:68]{index=68}  
+
+#### 2.7.2 Interface / Navigation facet
+
+**Owns**
+- User navigation/search across available packs/exchanges :contentReference[oaicite:69]{index=69}  
+- Presentation routing to Architect-Render (render requests) :contentReference[oaicite:70]{index=70}  
+- Feedback capture (signals → Orgo as governed work) :contentReference[oaicite:71]{index=71}  
+
+---
+
+### 2.8 EkoH (Trust + Impact Plane)
+
+**Owns**
+- Trust/impact ledger (expertise/ethics scoring, vote aggregation, impact history) :contentReference[oaicite:72]{index=72}  
+
+**Non-negotiable boundary**
+- EkoH never mutates canonical truth; it produces governance-weighting signals. :contentReference[oaicite:73]{index=73}  
+
+---
+
+## 3) Where the detailed contracts live
+
+- Node-level responsibilities and boundary specifics: `docs/20-nodes/*` (one page per component role).
+- kOA-owned artifact contracts and schemas (e.g., Orgo Case/Task, Build/Release records): `docs/30-artifacts/*`.
+- Kristal artifact contracts/schemas (Exchange, Runtime Pack, Claim-IR, Resolved Claim-IR, Validation Report): referenced via the pinned Kristal v4 dependency (not duplicated here).
+----- FILE END -----
+
+----- FILE BEGIN -----
+path="10-system/determinism.md"
+id=dee754a2ce5d
+kind=markdown
+size=6873
+lines=128
+chunks=0
+----
+# Determinism (kOA system)
+
+**Status:** Normative (kOA)  
+**Scope:** End-to-end behavior across Orgo → Kristal → Konnaxion → Architect, including gates, builds, distribution, and rendering.
+
+## 1) Purpose
+
+Determinism is the property that the system produces **identical** (or **canonically identical**) outputs when given identical pinned inputs + pinned configuration + pinned policies, and that failures occur with **stable error behavior**.
+
+This document defines:
+- what kOA means by determinism,
+- what must be pinned/recorded,
+- what classes of nondeterminism are forbidden at boundaries,
+- what conformance tests kOA requires.
+
+**Not in scope:** re-specifying Kristal artifact schemas, hash targets, canonicalization, signing formats, or Kristal compiler internals. Those are treated as external normative dependencies (see `../40-integration/kristal-v4/contract-pointers.md`).
+
+## 2) Definitions
+
+- **Deterministic output:** bit-identical outputs for the same pinned inputs/config/policies.
+- **Canonically identical output:** outputs may differ in non-semantic representation but are identical after applying the declared canonicalization (e.g., JCS).
+- **Pinned inputs:** a content-addressed snapshot of all upstream artifacts used (inputs, Claim-IR, Resolved Claim-IR, rulesets, etc.).
+- **Pinned configuration:** exact compiler/runtime config captured by a config hash and versioned component identities.
+- **Portable policy:** an enumerated policy selection recorded in manifests/records such that another implementation can reproduce behavior.
+
+## 3) Determinism layers (kOA)
+
+kOA determinism is enforced at multiple layers:
+
+### 3.1 Workflow determinism (Orgo)
+- Stage ordering is fixed and auditable.
+- Validation failure deterministically blocks compilation (“no compile on fail”).
+- A Build Record deterministically binds inputs → config → policy → outputs.
+
+### 3.2 Canon determinism (Kristal compilation)
+- Exchange and Runtime Pack are built deterministically under pinned inputs/config/policies.
+- Content-addressed IDs, hashes, and manifests must be reproducible across implementations.
+
+### 3.3 Distribution determinism (Konnaxion)
+- Activation is atomic and verification is fail-closed.
+- Rollback behavior is deterministic given the same trigger sequence and available pack set.
+
+### 3.4 Rendering determinism (Architect-Render)
+- Rendering must be deterministic from the same validated inputs + templates + parameters.
+- Rendering must not introduce new facts; it must trace every factual statement or refuse/omit deterministically.
+
+## 4) What MUST be pinned/recorded (minimum reproducibility surface)
+
+kOA requires that the following are recorded in the operational evidence (Build/Release records and/or referenced manifests):
+
+1) **Inputs**
+- input snapshot identifier(s)
+- upstream artifact references required to rebuild
+
+2) **Policy selections**
+- policy IDs/versions (and any enumerated policy knobs that affect output)
+
+3) **Component identities**
+- compiler / validator / renderer / packager names + versions
+- dependency lock versions where applicable
+
+4) **Configuration hash**
+- hash of the effective configuration that influences outputs
+
+5) **Canonicalization declaration**
+- declared canonicalization profile + version for any content-addressed JSON material
+
+6) **Integrity declarations**
+- declared file hashes and signatures (if present) sufficient for offline verification
+
+## 5) Forbidden (or constrained) sources of nondeterminism
+
+### 5.1 Wall-clock timestamps
+- Timestamps may exist for audit and correlation, but MUST NOT affect any content-addressed ID or hash target unless a profile explicitly includes them.
+
+### 5.2 Randomness / probabilistic components
+- Any probabilistic component MUST support a deterministic mode for tests and reproducible builds:
+  - fixed seed
+  - pinned model version
+  - pinned dependency versions
+  - frozen candidate sources (if applicable)
+- If deterministic mode is impossible, the nondeterministic stage must be moved **upstream of the truth boundary** and its outputs must be frozen as inputs (e.g., store Claim-IR and do not re-extract).
+
+### 5.3 Concurrency and ordering
+- Any output that depends on iteration order MUST define deterministic sorting and tie-breakers.
+- Parallelism may be used, but output order and aggregation MUST be deterministic.
+
+### 5.4 Floating-point / platform differences
+- Algorithms that can vary across CPU/OS (float math, hashing libraries, locale collation) MUST be stabilized by:
+  - integer-only representations where possible,
+  - explicit rounding rules,
+  - canonical byte encodings,
+  - pinned library implementations.
+
+### 5.5 External dependencies (network, live services)
+- Any external dependency MUST be represented as a content-addressed input snapshot (or otherwise pinned and recorded) for any deterministic build claim.
+- Network lookups are not allowed inside deterministic compilation unless their results are captured as pinned inputs.
+
+## 6) Canonicalization and hashing (kOA rule, Kristal normative)
+
+kOA requires that all content-addressed JSON material uses the declared canonicalization profile/version and that the system’s reproducibility tests compute IDs/hashes using that canonicalization.
+
+The **normative** canonicalization/hashing rules for Kristal artifacts are treated as external dependencies and must be followed exactly as pinned in `../40-integration/kristal-v4/contract-pointers.md`.
+
+## 7) Deterministic failure behavior
+
+Determinism also applies to failures:
+
+- Given identical inputs/config/policies, validation failures must produce stable error categories/codes and stable gating outcomes.
+- Rendering must deterministically:
+  - trace, or
+  - omit, or
+  - mark uncertain (only when upstream uncertainty exists), or
+  - refuse,
+  under the same policy + inputs.
+
+## 8) Conformance expectations (what kOA will test)
+
+kOA conformance includes (minimum):
+- Canonicalization and hashing checks under the declared profile.
+- Rebuild determinism: same pinned inputs/config/policies → same content IDs and declared file hashes.
+- Fail-closed verification: any declared integrity mismatch blocks publish/activation.
+- Deterministic rendering: same validated inputs/template/params → same outputs and trace coverage (or same deterministic refusal/omission behavior).
+
+## 9) Operational notes
+
+- Determinism does not prohibit optimization; it constrains optimization to **declared policies** and requires those policy selections to be recorded.
+- Where kOA must interoperate with multiple implementations, kOA should treat “deterministic build rules” and “reproducibility acceptance tests” from the pinned Kristal dependency as gating requirements for release.
+----- FILE END -----
+
+----- FILE BEGIN -----
+path="10-system/failure-modes.md"
+id=df3fc4d62600
+kind=markdown
+size=8008
+lines=232
+chunks=0
+----
+# Failure Modes
+
+**Normative for kOA:** YES
+**External normative reference:** Kristal v4 (pinned)
+
+This page defines the kOA system-level failure taxonomy, how failures propagate across nodes, and what constitutes safe behavior at the kOA truth boundary. Kristal v4 defines the normative artifact validity rules; kOA defines how the system reacts when those rules are not met.
+
+## Principles
+
+* **Fail closed at the truth boundary.** Any artifact that fails Kristal verification, schema validation, or determinism checks must not be compiled, promoted, activated, or served.
+* **Determinism over availability.** If determinism cannot be guaranteed, kOA must halt promotion/activation rather than proceed with “best effort.”
+* **Separate “content invalid” from “system impaired.”** Content failures are handled via quarantine and repair; infrastructure failures are handled via retry/backoff, degradation, and operator escalation.
+* **No implicit mutation.** Runtime feedback, overrides, or emergency controls cannot silently change canon; they must be recorded as governed kOA work items.
+
+## Failure classes
+
+### F1 — Input acquisition failures
+
+**Description:** Missing, unreadable, or inconsistent source inputs before Claim-IR formation.
+
+**Examples**
+
+* Input snapshot missing/expired
+* Source connector unavailable
+* Permission/credential failure
+* Partial fetch leading to non-reproducible inputs
+
+**Required behavior**
+
+* Mark run as blocked; do not emit candidate artifacts
+* Retry only if inputs can be fetched deterministically (same snapshot identity)
+* Record an Orgo Task for remediation (credential fix, snapshot regeneration)
+
+**Operator signals**
+
+* Elevated fetch errors, timeouts, checksum mismatch on snapshots
+
+---
+
+### F2 — Claim formation and resolution failures
+
+**Description:** The system cannot produce a well-formed Claim-IR or cannot resolve it to a fully grounded, policy-compliant Resolved Claim-IR.
+
+**Examples**
+
+* Claim-IR schema invalid (kOA-side pre-check)
+* Missing required citations/anchors in resolution
+* Policy gate rejects resolution (e.g., insufficient evidence, disallowed sources)
+
+**Required behavior**
+
+* Do not proceed to validation/compile
+* Emit a failure report (kOA build record) with actionable error codes
+* Create Orgo work item (repair claim, adjust mandate, fix input coverage)
+
+**Operator signals**
+
+* Increased policy rejections
+* Repeated failures on the same mandate indicating systemic rule breakage
+
+---
+
+### F3 — Kristal verification failures (truth boundary)
+
+**Description:** Any failure to verify Kristal artifacts or their integrity. This is the hard gate.
+
+**Examples**
+
+* Signature invalid or signer not trusted
+* Hash mismatch (artifact tampering or corruption)
+* Canonicalization mismatch
+* Schema nonconformance for Kristal artifacts
+* Traceability requirements not satisfied (missing references, broken links)
+
+**Required behavior**
+
+* Quarantine the artifact set (do not compile, do not publish)
+* Prevent activation and rollback if already active
+* Raise high-severity alert if failure occurs in a promoted/active channel
+* Record exact verification results and offending artifact IDs in the build record
+
+**Operator signals**
+
+* Verification error spikes
+* Trust store changes correlated with failures
+* Artifact store corruption indicators
+
+---
+
+### F4 — Determinism failures
+
+**Description:** The same declared inputs and policies do not reproduce identical outputs.
+
+**Examples**
+
+* Non-deterministic compilation output
+* Runtime Pack differs across rebuilds with identical inputs
+* Environment-dependent variation (locale/timezone, unordered maps, nondeterministic dependency versions)
+
+**Required behavior**
+
+* Block promotion
+* Require reproducibility replay in a clean environment
+* If repeated: open incident and treat as systemic defect, not content defect
+
+**Operator signals**
+
+* Rebuild mismatch rate
+* Differences clustered by runner image/version
+
+---
+
+### F5 — Compilation and packaging failures
+
+**Description:** Compiler cannot produce a valid runtime output from a verified/validated input set.
+
+**Examples**
+
+* Compiler crash
+* Unsupported feature in the target runtime
+* Missing dependency in build environment
+* Packaging step fails (bundle assembly)
+
+**Required behavior**
+
+* Fail build; do not publish
+* Retry only with identical toolchain and pinned dependencies
+* Escalate if failures exceed threshold or affect multiple mandates
+
+**Operator signals**
+
+* Build failures correlated with toolchain upgrades
+* Increased package assembly errors
+
+---
+
+### F6 — Distribution and activation failures (Konnaxion)
+
+**Description:** Artifacts cannot be distributed, verified, or activated in target environments.
+
+**Examples**
+
+* Target cannot fetch pack
+* Activation preflight fails (integrity, compatibility, policy mismatch)
+* Partial rollout stalls
+* Rollback fails or is unavailable
+
+**Required behavior**
+
+* Do not activate partially unless rollout policy explicitly allows staged activation
+* Prefer automatic rollback on activation failure
+* Maintain last-known-good active pack per channel/environment
+* Ensure activation is idempotent and auditable
+
+**Operator signals**
+
+* Rollout stuck percentage
+* Activation failure rate by environment
+* Rollback latency increases
+
+---
+
+### F7 — Runtime enforcement and safety failures
+
+**Description:** Active runtime violates declared constraints or cannot enforce gating logic.
+
+**Examples**
+
+* Policy enforcement module disabled or bypassed
+* Missing trace map at runtime where required
+* Runtime uses stale pack without declaring it
+* Safety filter failure (must degrade to safe responses)
+
+**Required behavior**
+
+* Degrade to safe mode (read-only, deny, or minimal behavior as defined by kOA policy)
+* Trigger emergency rollback if policy requires
+* Generate incident ticket with high severity
+
+**Operator signals**
+
+* Missing policy decision logs
+* Drift between active pack ID and reported pack ID
+* Increased unsafe output detections
+
+---
+
+### F8 — Observability and audit failures
+
+**Description:** The system cannot produce sufficient logs/records to reconstruct what happened.
+
+**Examples**
+
+* Missing build record or release record
+* Missing activation events
+* Incomplete verification logs
+
+**Required behavior**
+
+* Treat as a release blocker for regulated/strict channels
+* Continue running last-known-good but halt new promotions
+* Escalate to operators
+
+**Operator signals**
+
+* Logging pipeline errors
+* Missing event streams, gaps in audit timeline
+
+---
+
+## Propagation rules (how failures move through the system)
+
+* **F1–F2** are “pre-boundary” and should not produce promotable outputs.
+* **F3–F4** are “boundary/integrity” and must block promotion/activation and trigger quarantine.
+* **F5** blocks publication but does not necessarily indicate content corruption.
+* **F6–F7** require environment-specific safety behavior (staged rollback, safe mode).
+* **F8** blocks promotions in strict channels because auditability is part of safety.
+
+## Severity and required response
+
+* **SEV-1:** Any F3/F7 impacting an active channel in production, or rollback unavailable when required.
+* **SEV-2:** Widespread F4 determinism failures, repeated F6 activation failures across environments.
+* **SEV-3:** Elevated F1/F5 rates, localized F6, or intermittent F8.
+* **SEV-4:** Single-mandate issues with clear remediation.
+
+## Required artifacts (kOA-owned) for failure handling
+
+* **Build Record:** captures stage outcomes, exact error codes, artifact IDs, and verification results.
+* **Release Record:** captures what was promoted, where, and under which policies.
+* **Orgo Task/Case:** tracks remediation actions with ownership and approval.
+
+(Definitions live in `30-artifacts/`.)
+----- FILE END -----
+
+----- FILE BEGIN -----
+path="10-system/lifecycle.md"
+id=635b80f2993c
+kind=markdown
+size=8835
+lines=342
+chunks=0
+----
+# Lifecycle (kOA end-to-end)
+
+**Status:** Canonical (system-level)
+**Purpose:** Define the canonical lifecycle of the ecosystem: how raw inputs become validated canonical truth (Kristal Exchange), how that truth becomes portable offline execution artifacts (Runtime Packs), how outputs are rendered deterministically, how work is executed, and how feedback re-enters the system without mutating canon.
+
+---
+
+## 1) Key terms
+
+- **Build:** A governed run of the pipeline producing a new Kristal Exchange + Runtime Pack (or failing before canon).
+- **Release:** A distributed publication of a Runtime Pack (and associated metadata) through Konnaxion.
+- **Case / Task:** Orgo’s governance units. A **Task** is the atomic unit of work; a **Case** groups tasks over time.
+- **Canon:** Kristal Exchange (the authoritative, immutable truth artifact).
+- **Derived:** Runtime Pack and Render Bundles (must be traceable to canon + pinned configuration).
+- **Gate:** A deterministic acceptance point; failure blocks downstream stages (fail-closed when integrity is declared).
+
+---
+
+## 2) Lifecycle overview
+
+### 2.1 High-level stage spine
+
+0) Load Mandate + Blueprint  
+1) Ingest inputs  
+2) Extract Claim-IR  
+3) Resolve Claim-IR (SenTient)  
+4) Validate (Orgo gate)  
+5) Compile canon + runtime (Kristal)  
+6) Publish/Distribute (Konnaxion)  
+7) Render outputs (Architect-Render)  
+8) Execute work (SwarmCraft)  
+9) Feedback → new governed work (Orgo)
+
+### 2.2 Mermaid (conceptual)
+
+```mermaid
+flowchart TD
+  A[Mandate + Blueprint] --> B[Ingest Inputs]
+  B --> C[Extract -> Claim-IR]
+  C --> D[Resolve -> Resolved Claim-IR]
+  D --> E{Validate?}
+  E -- fail --> X[Stop: No Canon / No Pack / No Release]
+  E -- pass --> F[Compile -> Exchange + Runtime Pack]
+  F --> G{Verify for Activation?}
+  G -- fail --> Y[Reject: Fail-Closed / Rollback-or-Stay]
+  G -- pass --> H[Distribute Runtime Pack]
+  H --> I[Render -> Render Bundle + trace_map]
+  I --> J[Execute Tasks -> Telemetry]
+  J --> K[Feedback -> New Case/Task]
+  K --> C
+````
+
+---
+
+## 3) Stage-by-stage specification
+
+Each stage specifies: **Owner**, **Inputs**, **Outputs**, **Gate**, **Observability**.
+
+### Stage 0 — Mandate + Blueprint load
+
+**Owner:** Keter (Mandate) + Binah (Blueprint), enforced by Orgo.
+
+**Inputs**
+
+* Mandate bundle (scope, constraints, success criteria)
+* Blueprint bundle (schemas, ontologies, policies, versions)
+
+**Outputs**
+
+* Pinned runtime context reference (immutable refs to mandate + blueprint)
+
+**Gate**
+
+* Must refuse to run without an active mandate (when required by policy).
+* Must pin exact blueprint revisions used for the build.
+
+**Observability**
+
+* mandate_ref, blueprint_ref, policy pins
+* correlation IDs (build_id / request_id if present)
+
+---
+
+### Stage 1 — Ingest (raw inputs)
+
+**Owner:** Chokmah (Inputs adapters), orchestrated by Orgo.
+
+**Inputs**
+
+* Source documents, feeds, uploads, connectors
+* Ingest policy + provenance rules (from Blueprint)
+
+**Outputs**
+
+* Input snapshots (immutable snapshot refs)
+* Optional snapshot set manifest (listing snapshots + provenance pointers)
+
+**Gate**
+
+* Provenance must be preserved.
+* Snapshots must be immutable (content-addressed strongly recommended).
+
+**Observability**
+
+* ingest adapter version/config ref
+* snapshot IDs, snapshot-set ref
+* provenance pointers (opaque refs allowed)
+
+---
+
+### Stage 2 — Extract → Claim-IR
+
+**Owner:** Extractor(s), governed by Orgo.
+
+**Inputs**
+
+* Input snapshots (or snapshot-set ref)
+* Claim-IR schema/policy (pinned from Blueprint)
+
+**Outputs**
+
+* Claim-IR batch reference
+
+**Gate**
+
+* Extractors must output proposals only (no “truth”).
+* Evidence pointers and uncertainty markers must be preserved.
+
+**Observability**
+
+* extractor identity/version/config ref
+* input snapshot refs used
+* claim-ir ref
+
+---
+
+### Stage 3 — Resolve → Resolved Claim-IR (SenTient)
+
+**Owner:** SenTient, governed by Orgo.
+
+**Inputs**
+
+* Claim-IR batch
+* Resolution policy + candidate sources (pinned)
+
+**Outputs**
+
+* Resolved Claim-IR batch reference (with explicit ambiguity preserved)
+
+**Gate**
+
+* Must be deterministic under pinned policy/config.
+* Must preserve unresolved ambiguity explicitly (no silent coercion).
+
+**Observability**
+
+* resolver identity/version/config ref
+* warnings/errors summary (stable codes)
+* resolved-claim-ir ref
+
+---
+
+### Stage 4 — Validate (deterministic acceptance gate)
+
+**Owner:** Validation engine, enforced by Orgo.
+
+**Inputs**
+
+* Resolved Claim-IR
+* Validation policy/profile set (pinned)
+
+**Outputs**
+
+* Validation Report reference
+
+**Gate (hard)**
+
+* If validation fails, compilation must not proceed (“no compile on fail”).
+
+**Observability**
+
+* validator identity/version/config ref
+* validation report ref
+* gate decision + reason codes
+
+---
+
+### Stage 5 — Compile (Kristal)
+
+**Owner:** Kristal compiler, invoked by Orgo after Stage 4 pass.
+
+**Inputs**
+
+* Resolved Claim-IR
+* Validation Report (pass)
+* Compiler config + pinned profiles/policies
+
+**Outputs**
+
+* Kristal Exchange (+ Exchange Manifest)
+* Runtime Pack (+ Runtime Pack Manifest)
+
+**Gate**
+
+* Must produce schema-conformant artifacts (Kristal-owned schemas).
+* Must record reproducibility metadata sufficient for rebuild determinism (via manifests/build records).
+
+**Observability**
+
+* compiler identity/version/config ref
+* exchange refs + pack refs
+* manifest refs
+* content-hash / signature verification results (if produced)
+
+---
+
+### Stage 6 — Publish / Distribute (Konnaxion)
+
+**Owner:** Konnaxion (distribution facet), triggered and tracked by Orgo.
+
+**Inputs**
+
+* Runtime Pack + manifest
+* Channel/release intent (from Orgo)
+* Trust roots / revocation info (tenant-scoped)
+
+**Outputs**
+
+* Published artifacts in channel(s)
+* Activation/verification status updates
+* Rollback records (when applicable)
+
+**Gate (hard)**
+
+* If integrity material is declared (hash/signatures), verification must be fail-closed.
+* Activation must be atomic; rollback must be deterministic.
+
+**Observability**
+
+* verification results (pass/fail + codes)
+* active pack ID, previous pack ID
+* rollout cohort/channel + timestamps
+
+---
+
+### Stage 7 — Render outputs (Architect-Render)
+
+**Owner:** Architect-Render.
+
+**Inputs**
+
+* Kristal query results (from Exchange and/or Pack, per policy)
+* Render template + parameters (pinned)
+* Render policy (no-new-facts + trace requirements)
+
+**Outputs**
+
+* Render Bundle (includes trace coverage)
+
+**Gate (hard)**
+
+* Rendering must not introduce new facts.
+* Output must be deterministic under pinned inputs/template/params.
+* If trace coverage is insufficient, renderer must deterministically omit / mark-uncertain / refuse per policy.
+
+**Observability**
+
+* renderer identity/version/config ref
+* template + params refs
+* render bundle ref + trace coverage metrics
+
+---
+
+### Stage 8 — Execute work (SwarmCraft)
+
+**Owner:** SwarmCraft (or equivalent execution plane), governed by Orgo.
+
+**Inputs**
+
+* Orgo Tasks (and required inputs)
+* Execution policy (resource caps, tool allow-lists)
+
+**Outputs**
+
+* Execution results
+* Telemetry events
+
+**Gate**
+
+* Must follow deterministic policy where required (stable toolchain versions, fixed seeds when applicable).
+* Must emit telemetry sufficient for audit and feedback routing.
+
+**Observability**
+
+* task_id, case_id, correlation IDs
+* result refs
+* telemetry refs
+
+---
+
+### Stage 9 — Feedback → new governed work
+
+**Owner:** Orgo (ingestion of signals).
+
+**Inputs**
+
+* Telemetry, user feedback, ops events, trust/impact signals
+
+**Outputs**
+
+* New Cases/Tasks (governed work items)
+* Optional prioritization/triage updates
+
+**Gate**
+
+* Feedback must not mutate canon directly.
+* Any canon-affecting change must be a new build (new artifacts, new IDs).
+
+**Observability**
+
+* signal source + classification
+* created case/task IDs + routing
+* linkage to triggering build/release IDs (when applicable)
+
+---
+
+## 4) Cross-cutting hard rules (summary)
+
+* **No compile on fail:** Stage 4 fail blocks Stage 5.
+* **Fail-closed integrity:** Any declared hashes/signatures must verify before activation/publish.
+* **Immutable canon:** Exchange is never edited in place; updates produce new artifacts/IDs.
+* **No new facts downstream:** Rendering cannot invent; it must trace or refuse deterministically.
+
+---
+
+## 5) Pointers
+
+* Build orchestration details: `docs/50-operations/pipeline.md`
+* Kristal v4 integration profile and contract pointers: `docs/40-integration/kristal-v4/`
+* Conformance tests: `docs/60-guides/testing.md`
+
+
+----- FILE END -----
+
+----- FILE BEGIN -----
+path="10-system/trust-boundaries.md"
+id=19f8041b9554
+kind=markdown
+size=5589
+lines=136
+chunks=0
+----
+# Trust Boundaries
+
+**File:** `docs/10-system/trust-boundaries.md`  
+**Status:** Normative (kOA)  
+**External normative references:** Kristal v4 docs + schemas (pinned dependency)
+
+---
+
+## 1) Purpose
+
+Define the hard boundaries that keep the ecosystem:
+- auditable,
+- offline-correct,
+- tenant-safe,
+- fail-closed when integrity is declared,
+- resistant to downgrade/substitution and cross-tenant trust confusion.
+
+This page is *system-level*. It does **not** restate Kristal artifact schemas.
+
+---
+
+## 2) Boundary map (what is allowed to change, where)
+
+### 2.1 Truth boundary (canon boundary)
+**Where canon is created:** deterministic validation → compilation into Kristal Exchange.  
+**Downstream rule:** nothing downstream mutates canon; changes become new governed work that yields new artifacts.
+
+### 2.2 Integrity boundary (verification boundary)
+**Where bytes become trusted:** at publish (Orgo) and at activation/use (Konnaxion).  
+If integrity material is declared, verification is mandatory and fail-closed.
+
+### 2.3 Distribution boundary (activation boundary)
+**Where “what runs locally” is decided:** Konnaxion activation pipeline (atomic switch, compatibility checks, downgrade prevention, rollback constraints).
+
+### 2.4 Rendering boundary (no-new-facts boundary)
+**Where language/UI is produced:** Architect-Render must not introduce unsupported facts; it must trace to canon.
+
+### 2.5 Execution boundary (side-effects boundary)
+**Where real-world/side-effect work happens:** SwarmCraft (or equivalent). Execution produces telemetry and artifacts, not canon edits.
+
+### 2.6 Tenancy boundary (isolation boundary)
+**Where data and trust must not cross:** tenant/environment boundaries across storage, trust roots, channels, and policy.
+
+---
+
+## 3) Trust roots and trust material
+
+### 3.1 Trust roots are pinned and tenant-scoped
+- Trust roots MUST be pinned per channel and scoped to tenant/environment.
+- Correctness MUST NOT depend on fetching trust roots over the network at activation time.
+
+### 3.2 Trust material types (typical)
+- channel index signatures (optional but recommended)
+- Runtime Pack Manifest signatures
+- per-file inventory hashes in pack bundles
+- authority registries / revocation lists (if your deployment uses them)
+
+---
+
+## 4) Orgo boundaries (control plane)
+
+### 4.1 Gate enforcement
+Orgo enforces stage ordering and gates (especially “no compile on fail”) and blocks publish if required integrity checks fail.
+
+### 4.2 Evidence recording
+Orgo records:
+- build/release identifiers and artifact identifiers,
+- signer identity (`key_id`) and signature metadata,
+- policy selection / configuration identity,
+- references needed for reproducibility and audit.
+
+### 4.3 Tenant-safe trust handling
+Orgo MUST not mix trust roots across tenants/channels and should manage rotation and revocation publication.
+
+---
+
+## 5) Konnaxion boundaries (distribution facet)
+
+### 5.1 Activation rule (atomic and gated)
+Konnaxion activates a pack only when:
+1) integrity verification passes (as declared; fail-closed)  
+2) manifest parses + schema validates  
+3) referenced files exist  
+4) runtime compatibility checks pass  
+5) activation is an atomic switch (no partial activation)
+
+### 5.2 Verification ordering (recommended)
+1) verify channel index (if present)  
+2) verify Runtime Pack Manifest signature(s)  
+3) verify bundle file hashes (inventory)  
+4) activate
+
+### 5.3 Downgrade prevention + substitution safety
+- Maintain deterministic, persisted state (per channel) for highest activated release.
+- Reject same-release substitutions unless explicitly authorized.
+- Do not activate revoked artifacts when a verified revocation mechanism exists.
+
+### 5.4 Rollback is explicit and policy-authorized
+Rollback must be deterministic given the same verified inputs and triggers, and must not occur silently.
+
+---
+
+## 6) Multi-tenancy boundaries
+
+### 6.1 Data isolation
+- Inputs, build artifacts, packs, logs, and telemetry are tenant-scoped.
+- Access control and storage layout must prevent cross-tenant reads/writes.
+
+### 6.2 Trust isolation
+- Trust roots are tenant/environment/channel scoped.
+- Signature verification must be tenant-correct (no cross-tenant key acceptance unless explicitly configured and auditable).
+
+### 6.3 Policy isolation
+- Mandates/policies and blueprint/config pins are tenant-scoped unless explicitly shared by design (and then treated as shared dependencies with explicit governance).
+
+---
+
+## 7) Failure modes (must be handled deterministically)
+
+- **Wrong trust root set** (cross-tenant confusion) → hard fail (no activation/publish).
+- **Tampered bytes** (hash/signature mismatch) → fail-closed.
+- **Downgrade attempt** (lower release_id without rollback authorization) → refuse activation.
+- **Substitution** (same release_id, different artifact_id) → refuse unless reissue authorization exists.
+- **Revoked pack/key** → refuse activation when revocation is enforced.
+
+---
+
+## 8) Minimum conformance checklist
+
+- [ ] Truth boundary enforced (no compile on fail; no downstream canon edits).
+- [ ] Pinned trust roots per channel; offline verification possible.
+- [ ] Fail-closed on any declared integrity material.
+- [ ] Atomic activation; deterministic rollback behavior.
+- [ ] Downgrade prevention + substitution safety.
+- [ ] Tenant isolation for data + trust roots + policy.
+- [ ] Orgo records build/release provenance and integrity metadata (`key_id`, signatures, hashes).
+----- FILE END -----
