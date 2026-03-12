@@ -1,0 +1,263 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://koa.local/schemas/orgo-case.schema.json",
+  "title": "Orgo Case",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "case_id",
+    "organization_id",
+    "source",
+    "type",
+    "category",
+    "label",
+    "status",
+    "priority",
+    "visibility",
+    "owners",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "description": "Globally unique identifier for the Case.",
+      "minLength": 1
+    },
+    "organization_id": {
+      "type": "string",
+      "description": "Tenant / authority scope for this Case.",
+      "minLength": 1
+    },
+    "source": {
+      "type": "string",
+      "description": "Origin of the Case (e.g., user, automation, system).",
+      "minLength": 1
+    },
+    "type": {
+      "type": "string",
+      "description": "Broad case type (e.g., build, incident, review, ingest, release).",
+      "minLength": 1
+    },
+    "category": {
+      "type": "string",
+      "description": "Routing category used by Orgo policies.",
+      "minLength": 1
+    },
+    "label": {
+      "type": "string",
+      "description": "Canonical dot-separated routing label.",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9]+(\\.[A-Za-z0-9_-]+)+$"
+    },
+    "status": {
+      "type": "string",
+      "description": "Lifecycle state for the Case.",
+      "enum": [
+        "OPEN",
+        "IN_PROGRESS",
+        "BLOCKED",
+        "WAITING_REVIEW",
+        "COMPLETED",
+        "CANCELLED",
+        "FAILED"
+      ]
+    },
+    "priority": {
+      "type": "string",
+      "description": "Priority level (policy-defined).",
+      "minLength": 1
+    },
+    "severity": {
+      "type": "string",
+      "description": "Severity (optional; policy-defined)."
+    },
+    "visibility": {
+      "type": "string",
+      "description": "Visibility classification for the Case.",
+      "enum": [
+        "INTERNAL",
+        "PRIVATE",
+        "PUBLIC"
+      ]
+    },
+    "owners": {
+      "type": "array",
+      "description": "Responsible parties for this Case.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "id"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "description": "Owner kind (user, team, service).",
+            "enum": [
+              "user",
+              "team",
+              "service"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "description": "Identifier in the owning system.",
+            "minLength": 1
+          },
+          "display": {
+            "type": "string",
+            "description": "Human-friendly label."
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "string",
+      "description": "Short operator-facing summary."
+    },
+    "description": {
+      "type": "string",
+      "description": "Longer context/rationale."
+    },
+    "tags": {
+      "type": "array",
+      "description": "Free-form tags.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "policy_context": {
+      "type": "object",
+      "description": "References to governing mandate/policies.",
+      "additionalProperties": false,
+      "properties": {
+        "mandate_ref": {
+          "type": "string",
+          "description": "Content-addressed reference to the mandate bundle."
+        },
+        "policy_refs": {
+          "type": "array",
+          "description": "Content-addressed references to policies applied to this case.",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "refs": {
+      "type": "array",
+      "description": "Content-addressed references to related artifacts (Kristal artifacts referenced by ID/ref; not embedded).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ref_type",
+          "ref"
+        ],
+        "properties": {
+          "ref_type": {
+            "type": "string",
+            "description": "Type discriminator for the referenced artifact."
+          },
+          "ref": {
+            "type": "string",
+            "description": "Content-addressed reference or stable ID."
+          },
+          "note": {
+            "type": "string",
+            "description": "Optional human note about why this ref exists."
+          }
+        }
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "description": "References to Orgo Tasks belonging to this Case.",
+      "items": {
+        "type": "string",
+        "description": "Task identifier or content ref (implementation choice)."
+      }
+    },
+    "due_at": {
+      "type": "string",
+      "description": "Target completion time.",
+      "format": "date-time"
+    },
+    "sla": {
+      "type": "object",
+      "description": "Policy-defined SLA metadata.",
+      "additionalProperties": false,
+      "properties": {
+        "response_due_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "resolve_due_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "audit": {
+      "type": "array",
+      "description": "Append-only audit events (or references).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "timestamp",
+          "event_type"
+        ],
+        "properties": {
+          "event_id": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actor": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "user",
+                  "service"
+                ]
+              },
+              "id": {
+                "type": "string"
+              }
+            }
+          },
+          "event_type": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "description": "Structured event payload.",
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "description": "Creation timestamp.",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "description": "Last update timestamp.",
+      "format": "date-time"
+    }
+  }
+}

@@ -1,0 +1,226 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://koa.digitalecosystem/schemas/orgo-task.schema.json",
+  "title": "Orgo Task",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "task_id",
+    "organization_id",
+    "source",
+    "type",
+    "category",
+    "label",
+    "status",
+    "priority",
+    "severity",
+    "visibility",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Stable external identifier."
+    },
+    "organization_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Owning organization scope."
+    },
+    "tenant_id": {
+      "type": "string",
+      "description": "Optional multi-tenant scope identifier (if used)."
+    },
+    "case_id": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "Case this task belongs to (if any).",
+      "default": null
+    },
+
+    "source": {
+      "type": "string",
+      "enum": ["email", "api", "manual", "sync"],
+      "description": "Origin channel."
+    },
+    "source_reference": {
+      "type": ["string", "null"],
+      "description": "Channel-specific reference (e.g., email message-id, external URI).",
+      "default": null
+    },
+
+    "type": {
+      "type": "string",
+      "description": "Domain-level type (e.g., maintenance, hr_case, education_support).",
+      "minLength": 1
+    },
+    "category": {
+      "type": "string",
+      "enum": ["request", "incident", "update", "report", "distribution"],
+      "description": "Global category enum."
+    },
+    "subtype": {
+      "type": ["string", "null"],
+      "description": "Domain-specific subtype (often mirrored into metadata).",
+      "default": null
+    },
+
+    "label": {
+      "type": "string",
+      "description": "Canonical information label: <BASE>.<CATEGORY>.<SUBCATEGORY>.<HORIZONTAL_ROLE...> (e.g., 1000.12.34.Ops.Maintenance).",
+      "pattern": "^\\d+\\.\\d+\\.\\d+\\.[A-Za-z][A-Za-z0-9]*(\\.[A-Za-z][A-Za-z0-9]*)*$"
+    },
+
+    "title": {
+      "type": "string",
+      "maxLength": 512,
+      "description": "Short task title."
+    },
+    "description": {
+      "type": "string",
+      "description": "Free-text description."
+    },
+
+    "status": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "IN_PROGRESS",
+        "ON_HOLD",
+        "COMPLETED",
+        "FAILED",
+        "ESCALATED",
+        "CANCELLED"
+      ],
+      "description": "TASK_STATUS state machine."
+    },
+
+    "priority": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+      "description": "Priority enum."
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["MINOR", "MODERATE", "MAJOR", "CRITICAL"],
+      "description": "Severity enum."
+    },
+    "visibility": {
+      "type": "string",
+      "enum": ["PUBLIC", "INTERNAL", "RESTRICTED", "ANONYMISED"],
+      "description": "Access/export semantics."
+    },
+
+    "assignee_role": {
+      "type": ["string", "null"],
+      "description": "Denormalized routing role label (e.g., Ops.Maintenance).",
+      "default": null
+    },
+
+    "created_by_user_id": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "Optional creator identity.",
+      "default": null
+    },
+    "requester_person_id": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "Person the work is for (student, player, employee, etc.).",
+      "default": null
+    },
+
+    "owner_role_id": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "Primary owning role for this task.",
+      "default": null
+    },
+    "owner_user_id": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "Direct owner; may be null if owned only by a role.",
+      "default": null
+    },
+
+    "due_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "default": null
+    },
+
+    "reactivity_time": {
+      "type": ["string", "null"],
+      "description": "ISO-8601 duration (e.g., PT2H).",
+      "default": null
+    },
+    "reactivity_deadline_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "readOnly": true,
+      "description": "Computed deadline (usually created_at + reactivity_time under the active profile).",
+      "default": null
+    },
+
+    "escalation_level": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "0 = none; 1+ = depth in escalation path."
+    },
+
+    "closed_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "readOnly": true,
+      "description": "Timestamp when the task entered a terminal state.",
+      "default": null
+    },
+
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Extension surface for domain-specific fields; must not duplicate core fields."
+    },
+
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "readOnly": true
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "readOnly": true
+    },
+
+    "routing": {
+      "type": "object",
+      "deprecated": true,
+      "description": "Deprecated (legacy). Prefer label as the routing primitive; if present, should be derived from label.",
+      "additionalProperties": false,
+      "properties": {
+        "base": { "type": "integer", "minimum": 0 },
+        "category": { "type": "integer", "minimum": 0 },
+        "subcategory": { "type": "integer", "minimum": 0 },
+        "horizontal_role": { "type": "string" }
+      }
+    },
+
+    "telemetry_contract": {
+      "type": "object",
+      "deprecated": true,
+      "description": "Deprecated (execution-layer concern). Telemetry contracts belong to execution envelopes (e.g., SwarmCraft), not the Orgo Task core contract.",
+      "additionalProperties": true
+    },
+
+    "constraints": {
+      "type": "object",
+      "deprecated": true,
+      "description": "Deprecated (execution-layer concern). Prefer Orgo workflow/policy-level constraints, not embedded per-task constraints.",
+      "additionalProperties": true
+    }
+  }
+}
